@@ -1,3 +1,11 @@
-^.Rroj.user/$
-^LICENSE\.md$
+^.*\.Rproj$
+^\.Rproj\.user$
 ^README\.Rmd$
+^codecov\.yml$
+^LICENSE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+guideline
+^cran-comments\.md$
+^CRAN-SUBMISSION$
