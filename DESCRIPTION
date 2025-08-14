@@ -1,6 +1,6 @@
 Package: scrubwren
 Type: Package
-Title: Collection of 'Reticulate' Utilities
+Title: Specialized Collection of Reticulate Utilities: Better Wrappers for A Smoother Experience
 Version: 1.0.1
 Authors@R: 
     person(given = "Weihao",
@@ -8,13 +8,14 @@ Authors@R:
            role = c("aut", "cre", "cph"),
            email = "llreczx@gmail.com",
            comment = c(ORCID = "0000-0003-4959-106X"))
-Description: A light-weight object-oriented system with 'python'-like syntax which supports multiple inheritances and incorporates a 'python'-like method resolution order.
+Description: A specialized collection of reticulate utilities, offering refined wrappers to enhance workflow and deliver a seamless data science experience in R.
 License: MIT + file LICENSE
-URL: https://tengmcing.github.io/bandicoot/, https://github.com/TengMCing/bandicoot/
-BugReports: https://github.com/TengMCing/bandicoot/issues
+URL: https://tengmcing.github.io/scrubwren/, https://github.com/TengMCing/scrubwren/
+BugReports: https://github.com/TengMCing/scrubwren/issues
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    reticulate,
     cli,
     utils
 Suggests: 
