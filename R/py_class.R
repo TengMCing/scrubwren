@@ -1,7 +1,7 @@
 #' @export
 py_class <- function(classname, ..., inherit = NULL) {
-  expr <- bquote(reticulate::PyClass(classname = .(substitute(classname)), 
-                                     defs = .(substitute(list(...))), 
-                                     inherit = .(substitute(inherit))))
+  expr <- substitute(reticulate::PyClass(classname = classname, 
+                                         defs = list(...), 
+                                         inherit = inherit))
   eval.parent(expr)
 }
