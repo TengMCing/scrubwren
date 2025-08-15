@@ -16,5 +16,5 @@ You can install the development version of scrubwren from
 
 ``` r
 # install.packages("pak")
-pak::pak("TengMCing/scrubwren")
+remotes::install_github("TengMCing/scrubwren")
 ```
