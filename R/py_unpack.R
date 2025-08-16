@@ -1,14 +1,14 @@
 .scrubwren_state <- new.env()
 
 #' @export
-py_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TRUE) {
+py_tuple_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TRUE) {
   if (quote_vars) {
     vars <- substitute(vars)
   }
   
   if (!is.call(vars) || vars[[1]] != as.symbol("c")) {
-    .scrubwren_state$last_unpack_value <- value
-    expr <- bquote(.(vars) <- .scrubwren_state$last_unpack_value)
+    .scrubwren_state$last_tuple_unpack_value <- value
+    expr <- bquote(.(vars) <- .scrubwren_state$last_tuple_unpack_value)
     eval(expr, envir = envir)
     return(invisible(NULL))
   }
@@ -23,9 +23,9 @@ py_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TRUE) {
   
   for (i in 2:length(vars)) {
     if (reticulate::is_py_object(value)) {
-      py_unpack(vars[[i]], value[[i - 2]], envir, FALSE)
+      py_tuple_unpack(vars[[i]], value[[i - 2]], envir, FALSE)
     } else {
-      py_unpack(vars[[i]], value[[i - 1]], envir, FALSE)
+      py_tuple_unpack(vars[[i]], value[[i - 1]], envir, FALSE)
     }
   }
 }
