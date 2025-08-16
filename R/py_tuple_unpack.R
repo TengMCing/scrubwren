@@ -1,5 +1,5 @@
 
-#' @param envir where to assign the value to vars.
+# @param envir where to assign the value to vars.
 #' @export
 py_tuple_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TRUE) {
   if (quote_vars) {

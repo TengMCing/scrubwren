@@ -1,4 +1,4 @@
-#' @param envir where to run the for loop.
+# @param envir where to run the for loop.
 #' @export
 py_for <- function(loop_spec, body, envir = parent.frame()) {
   if (!is.call(loop_spec) || loop_spec[[1]] != as.symbol("~"))
