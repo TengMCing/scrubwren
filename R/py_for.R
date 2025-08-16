@@ -10,7 +10,7 @@ py_for <- function(loop_spec, body, envir = parent.frame()) {
   
   # If `iter` only implements the __iter__ method but not the __next__ method,
   # we need to convert it to a iterator.
-  if (!reticulate::py_to_r(py_builtins$hasattr(iter, "__next__"))) {
+  if (!reticulate::py_has_attr(iter, "__next__")) {
     iter <- py_builtins$iter(iter)  
   }
   

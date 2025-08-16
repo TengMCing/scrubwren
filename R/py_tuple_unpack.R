@@ -14,8 +14,8 @@ py_tuple_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TR
   }
   
   if (reticulate::is_py_object(value)) {
-    if (reticulate::py_to_r(py_builtins$len(value)) > length(vars) - 1) 
-      cli::cli_warn("Unpacked values remain: the variable structure {.var {deparse(vars)}} is shorter than expected [{reticulate::py_to_r(py_builtins$len(value))}]!")
+    if (reticulate::py_len(value) > length(vars) - 1) 
+      cli::cli_warn("Unpacked values remain: the variable structure {.var {deparse(vars)}} is shorter than expected [{reticulate::py_len(value)}]!")
   } else {
     if (length(value) > length(vars) - 1) 
       cli::cli_warn("Unpacked values remain: the variable structure {.var {deparse(vars)}} is shorter than expected [{length(value)}]!")
