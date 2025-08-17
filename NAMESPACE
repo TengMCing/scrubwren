@@ -3,7 +3,6 @@
 export(py_builtins)
 export(py_class)
 export(py_for)
-export(py_super)
 export(py_super_init)
 export(py_tuple_unpack)
 export(reimport_py_builtins)

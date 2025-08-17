@@ -34,6 +34,7 @@ py_builtins_bindings <- function(x) {
 #' by calling [reticulate::import_builtins()].
 #' 
 #' @param convert Boolean. Whether to automatically convert Python objects to R. See also [reticulate::import()].
+#' @return No return; called for side effect.
 #' @examples
 #' 
 #' \dontrun{
@@ -44,6 +45,7 @@ py_builtins_bindings <- function(x) {
 reimport_py_builtins <- function(convert = FALSE) {
   .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = convert)
   .scrubwren_state$py_config <- reticulate::py_config()$python
+  return(invisible(NULL))
 }
 
 #' Python's built-in functions
