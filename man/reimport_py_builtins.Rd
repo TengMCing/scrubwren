@@ -9,6 +9,9 @@ reimport_py_builtins(convert = FALSE)
 \arguments{
 \item{convert}{Boolean. Whether to automatically convert Python objects to R. See also \code{\link[reticulate:import]{reticulate::import()}}.}
 }
+\value{
+No return; called for side effect.
+}
 \description{
 This function re-imports Python's built-in functions into \link{py_builtins}
 by calling \code{\link[reticulate:import]{reticulate::import_builtins()}}.
