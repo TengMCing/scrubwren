@@ -2,7 +2,7 @@
 % Please edit documentation in R/zzz.R
 \name{py_builtins}
 \alias{py_builtins}
-\title{Python's built-in functions.}
+\title{Python's built-in functions}
 \usage{
 py_builtins
 }
