@@ -29,14 +29,19 @@ You can install the development version of scrubwren from [GitHub](https://githu
 remotes::install_github("TengMCing/scrubwren")
 ```
 
-## `reticulate` utilities
+## Table of contents
+
+
+
+1. [Python class definition: `py_class()`](#py-class)
+2. [Turning automatic conversion on/off with `py_convert_on()` / `py_convert_off()`](#py-convert)
+
+
+## 1. Python class definition: `py_class()` {#py-class}
 
 ```{r}
 library(scrubwren)
 ```
-
-
-## Python class definition: `py_class()`
 
 In `reticulate`, Python class definitions must be provided as a list via the `defs` argument in `PyClass`. With `py_class()`, you can instead supply them as regular function arguments. You can still specify `classname` as a character string and `inherit` as a list of Python objects, as usual. 
 
@@ -59,7 +64,7 @@ Mike$get_email() |> class()
 ```
 
 
-## Turning automatic conversion on/off with `py_convert_on()` / `py_convert_off()`
+## 2. Turning automatic conversion on/off with `py_convert_on()` / `py_convert_off()` {#py-convert}
 
 `py_convert_on()` enables automatic conversion of Python objects to R, while `py_convert_off()` disables it. Note that the Python object must also be represented as an R environment for this to work, this typically includes Python modules or object instances, but not Python classes.
 
