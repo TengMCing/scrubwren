@@ -1,23 +1,28 @@
 .scrubwren_state <- new.env()
 
 py_builtins_bindings <- function(x) {
-  if (missing(x)) {
-    # Delay the import of builtins to give the user the opportunity to 
-    # declare which python interpreter to use.
-    if (is.null(.scrubwren_state$py_builtins)) {
-      
-      potential_py <- reticulate::py_discover_config()
-      
-      if (is.null(potential_py)) {
-        cli::cli_alert_danger("No Python interpreter could be detected! Please install Python and set the interpreter using `reticulate::use_python()`.")
-      } else {
-        cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
-        cli::cli_alert_info("You can re-import `py_builtins` by calling `reimport_py_builtins()` after setting the interpreter with `reticulate::use_python()`.")
-        .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
-      }
+
+  # Delay the import of builtins to give the user the opportunity to 
+  # declare which python interpreter to use.
+  if (is.null(.scrubwren_state$py_builtins)) {
+    
+    potential_py <- reticulate::py_discover_config()
+    
+    if (is.null(potential_py)) {
+      cli::cli_alert_danger("No Python interpreter could be detected! Please install Python and set the interpreter using `reticulate::use_python()`.")
+    } else {
+      cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
+      cli::cli_alert_info("You can re-import `py_builtins` by calling `reimport_py_builtins()` after setting the interpreter with `reticulate::use_python()`.")
+      .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
+      .scrubwren_state$py_config <- potential_py$python
     }
+    
+  } else {
+    current_python <- reticulate::py_config()$python
+    if (current_python != .scrubwren_state$py_config) 
+      cli::cli_alert_danger("The `py_builtins` were imported from {.file {(.scrubwren_state$py_config)}}, but the currently active Python interpreter is {.file {current_python}}! Please re-import the built-ins by calling `reimport_py_builtins()`.")
   }
-  
+
   # The binding is locked, so we can not assign value to it.
   
   return(.scrubwren_state$py_builtins)
@@ -25,7 +30,8 @@ py_builtins_bindings <- function(x) {
 
 #' @export
 reimport_py_builtins <- function(convert = FALSE) {
-  .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = convert) 
+  .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = convert)
+  .scrubwren_state$py_config <- reticulate::py_config()$python
 }
 
 #' Python's built-in functions.
