@@ -2,6 +2,8 @@
 
 export(py_builtins)
 export(py_class)
+export(py_convert_off)
+export(py_convert_on)
 export(py_for)
 export(py_super_init)
 export(py_tuple_unpack)
