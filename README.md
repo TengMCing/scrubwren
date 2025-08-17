@@ -21,9 +21,10 @@ remotes::install_github("TengMCing/scrubwren")
 
 ## Table of contents
 
-1.  [Python class definition: `py_class()`](#py-class)
+1.  [Python class definition:
+    `py_class()`](#1-python-class-definition-py_class)
 2.  [Turning automatic conversion on/off with `py_convert_on()` /
-    `py_convert_off()`](#py-convert)
+    `py_convert_off()`](#2-turning-automatic-conversion-onoff-with-py_convert_on--py_convert_off)
 
 ## 1. Python class definition: `py_class()`
 
