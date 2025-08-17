@@ -31,7 +31,7 @@ Employee <- py_class("Employee",
 
 Salary <- py_class("Salary", inherit = Employee,
                    `__init__` = function(self, name, id, salary) {
-                     super()$`__init__`(name, id)
+                     py_super_init(name, id)
                      self$salary <- salary
                      return(py_builtins$None)
                    },
