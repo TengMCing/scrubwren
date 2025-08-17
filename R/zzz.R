@@ -28,13 +28,25 @@ py_builtins_bindings <- function(x) {
   return(.scrubwren_state$py_builtins)
 }
 
+#' Re-import Python's built-in functions
+#' 
+#' This function re-imports Python's built-in functions into [py_builtins] 
+#' by calling [reticulate::import_builtins()].
+#' 
+#' @param convert Boolean. Whether to automatically convert Python objects to R. See also [reticulate::import()].
+#' @examples
+#' 
+#' \dontrun{
+#' reimport_py_builtins()
+#' }
+#' 
 #' @export
 reimport_py_builtins <- function(convert = FALSE) {
   .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = convert)
   .scrubwren_state$py_config <- reticulate::py_config()$python
 }
 
-#' Python's built-in functions.
+#' Python's built-in functions
 #' 
 #' These built-in functions are imported when the package loads. 
 #' By default, `reticulate::py_discover_config()` is used to determine the Python version. 
