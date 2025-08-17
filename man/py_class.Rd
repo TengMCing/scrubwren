@@ -4,7 +4,7 @@
 \alias{py_class}
 \title{Create a Python class}
 \usage{
-py_class(classname, ..., inherit = NULL)
+py_class(classname, ..., inherit = NULL, convert = FALSE)
 }
 \arguments{
 \item{classname}{Character. Name of the class.}
@@ -13,15 +13,25 @@ py_class(classname, ..., inherit = NULL)
 
 \item{inherit}{List. A list of Python class objects representing the
 parent classes.}
+
+\item{convert}{Boolean. Whether to automatically convert Python objects to R.}
+}
+\value{
+A Python class object.
 }
 \description{
 This function works like \code{\link[reticulate:PyClass]{reticulate::PyClass()}}, but the \code{defs} argument
 can now be provided as individual arguments (\code{...}) instead of a list.
 }
+\details{
+The original \code{\link[reticulate:PyClass]{reticulate::PyClass()}} does not allow disabling the automatic
+conversion of Python objects to R. This function modifies its function body
+to enable that functionality.
+}
 \examples{
 
 \dontrun{
-Employee <- py_class("Employee", 
+Employee <- py_class("Employee",
                      `__init__` = function(self, name, id) {
                        self$name <- name
                        self$id <- id
@@ -32,6 +42,7 @@ Employee <- py_class("Employee",
                      })
 Mike <- Employee("Mike", "1234")
 Mike$get_email()
+Mike$get_email() |> class()
 }
 
 
