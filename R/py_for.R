@@ -1,3 +1,41 @@
+
+# py_iterable_check -------------------------------------------------------
+
+#' Test whether a Python object is iterable or an iterator
+#'
+#' These functions check the iteration protocol of a Python object
+#' when accessed from R through `reticulate`.
+#'
+#' - `py_is_iterable()` returns `TRUE` if the object can return an iterator
+#'   via Python's `iter()` function, otherwise `FALSE`.
+#' - `py_is_iterator()` returns `TRUE` if the object itself is an iterator,
+#'   i.e. an instance of `collections.abc.Iterator`.
+#'
+#' @param obj A Python object proxy.
+#'
+#' @return A Boolean scalar (`TRUE` or `FALSE`).
+#'
+#' @seealso Python's [iterator protocol](https://docs.python.org/3/library/stdtypes.html#typeiter)
+#'
+#' @examples
+#' \dontrun{
+#' np <- reticulate::import("numpy", convert = FALSE)
+#'
+#' # A Python list is iterable but not an iterator
+#' lst <- reticulate::r_to_py(list(1, 2, 3))
+#' py_is_iterable(lst)   # TRUE
+#' py_is_iterator(lst)   # FALSE
+#'
+#' # An iterator (e.g., from iter()) is both iterable and an iterator
+#' it <- py_builtins$iter(lst)
+#' py_is_iterable(it)    # TRUE
+#' py_is_iterator(it)    # TRUE
+#' }
+#'
+#' @name py_iterable_check
+NULL
+
+#' @rdname py_iterable_check
 #' @export
 py_is_iterable <- function(obj) {
   reticulate::py_config()
@@ -11,15 +49,60 @@ py_is_iterable <- function(obj) {
   }
 }
 
+#' @rdname py_iterable_check
 #' @export
 py_is_iterator <- function(obj) {
   if (!reticulate::is_py_object(obj)) cli::cli_abort("{substitute(obj)} is not a Python object!")
-  collections <- reticulate::import(collections, convert = FALSE)
-  result <- py_buiitins$isinstance(obj, collections$abc$Iterator) 
+  collections <- reticulate::import("collections", convert = FALSE)
+  result <- py_builtins$isinstance(obj, collections$abc$Iterator) 
   return(reticulate::py_to_r(result))
 }
 
-# @param envir where to run the for loop.
+
+# py_for ------------------------------------------------------------------
+
+#' Python-style `for` loops in R
+#'
+#' Executes a Python-style `for` loop in R, iterating over a Python iterable or
+#' iterator. This provides a convenient syntax for looping with destructuring
+#' (tuple unpacking) similar to Python's `for` statement.
+#'
+#' @param loop_spec A two-sided formula of the form `vars ~ iterable`, where
+#'   `vars` specifies one or more loop variables (e.g. `x` or `c(i, j)`), and
+#'   `iterable` is a Python iterable or iterator.
+#' @param body An R expression to evaluate on each iteration.
+#' @param envir The environment in which to run the loop and evaluate the body.
+#'   Defaults to the calling environment.
+#'
+#' @return Invisibly returns `NULL`. Called for side effects.
+#'
+#' @details
+#' - If `iterable` implements only `__iter__` but not `__next__`, it is
+#'   automatically converted into an iterator.  
+#' - Loop variables support tuple unpacking via [py_tuple_unpack()].  
+#' - Iteration stops when the underlying Python object raises `StopIteration`.  
+#'
+#' @examples
+#' \dontrun{
+#' # Loop over a Python list
+#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+#'   print(x)
+#' })
+#'
+#' # Loop with tuple unpacking
+#' pairs <- reticulate::tuple(list(list(1, "a"), list(2, "b")), convert = TRUE)
+#' py_for(c(i, j) ~ pairs, {
+#'   cat("i =", i, " j =", j, "\n")
+#' })
+#'
+#' # Loop over a NumPy array
+#' np <- reticulate::import("numpy", convert = FALSE)
+#' arr <- np$array(c(10, 20, 30))
+#' py_for(val ~ arr, {
+#'   print(val)
+#' })
+#' }
+#'
 #' @export
 py_for <- function(loop_spec, body, envir = parent.frame()) {
   if (!is.call(loop_spec) || loop_spec[[1]] != as.symbol("~"))
