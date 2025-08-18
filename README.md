@@ -26,14 +26,36 @@ remotes::install_github("TengMCing/scrubwren")
 2.  [Turning automatic conversion on/off with `py_convert_on()` /
     `py_convert_off()`](#2-turning-automatic-conversion-onoff-with-py_convert_on--py_convert_off)
 
-## 1. Python class definition: `py_class()`
+## 1. Asscesible Python built-in functions
 
 ``` r
 library(scrubwren)
 ```
 
-In `reticulate`, Python class definitions must be provided as a list via
-the `defs` argument in `PyClass`. With `py_class()`, you can instead
+In `reticulate`, if you would like to directly use Python built-in
+functions like `type()`, you need to first import as with
+`reticulate::import_builtins()` into an R variable, and then call it.
+According to the `reticulate` documentation, this is primarily because
+the difference in the set of built-in functions in Python 2 and 3. In
+`scrubwren`, the built-in functions will be loaded automatically into
+`py_builtins` and ready to be used. It happens when you load the
+package, so we don’t have the name conflicts problem.
+
+When importing the built-in functions, a message will be issued telling
+you where those built-in functions are imported from. However, if you
+set `reticulate` to use a different Python interpreter, then you need to
+re-import the builtin
+
+``` r
+names(py_builtins)[1:5]
+#> ✖ Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`
+#> NULL
+```
+
+## 1. Define Python class with `py_class()`
+
+In `reticulate`, Python class definitions must be provided as a **list**
+via the `defs` argument in `PyClass`. With `py_class()`, you can instead
 supply them as regular function arguments. You can still specify
 `classname` as a character string and `inherit` as a list of Python
 objects, as usual.
@@ -50,12 +72,13 @@ Employee <- py_class("Employee", convert = FALSE,
                      `__init__` = function(self, name, id) {
                        self$name <- name
                        self$id <- id
-                       return(invisible(NULL))
+                       return(py_builtins$None)
                      },
                      get_email = function(self) {
                        paste0(self$name, "_", self$id, "@company.com")
                      })
 Mike <- Employee("Mike", "1234")
+#> ℹ Importing `py_builtins` from Python 3.11 at '/Users/patrickli/.virtualenvs/tf/bin/python'.
 Mike$get_email()
 #> 'Mike_1234@company.com'
 Mike$get_email() |> class()
@@ -80,4 +103,36 @@ Mike$get_email() |> class()
 py_convert_off(Mike)
 Mike$get_email() |> class()
 #> [1] "python.builtin.str"    "python.builtin.object"
+```
+
+## 3. Call the superclass initializer with `` py_super()$`__init__()` `` or `py_super_init()`
+
+In `reticulate`, there is no formal documentation on how to call a
+superclass initializer when defining `__init__` via `PyClass`.
+Inspecting its source reveals that `PyClass` injects a `super()`
+function into the environment of each class method. This allows you to
+call the superclass initializer with `` super()$`__init__`() ``. The
+`scrubwren` package makes this explicit by re-exporting `super()` as
+`py_super()` and providing a convenient wrapper `py_super_init()` for
+`` py_super()$`__init__()` ``.
+
+``` r
+Salary <- py_class("Salary", inherit = Employee, convert = FALSE,
+                   `__init__` = function(self, name, id, salary) {
+                     py_super_init(name, id)
+                     self$salary <- salary
+                     return(py_builtins$None)
+                   },
+                   get_salary_summary = function(self) {
+                     list(ID = self$id,
+                          Name = self$name,
+                          Email = self$get_email(),
+                          Salary = self$salary)
+                   })
+
+Mike_salary <- Salary("Mike", "1234", 1000)
+Mike_salary$get_salary_summary()
+#> {'ID': '1234', 'Name': 'Mike', 'Email': 'Mike_1234@company.com', 'Salary': 1000.0}
+Mike_salary$get_email()
+#> 'Mike_1234@company.com'
 ```
