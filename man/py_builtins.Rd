@@ -2,11 +2,33 @@
 % Please edit documentation in R/zzz.R
 \name{py_builtins}
 \alias{py_builtins}
-\title{Python's built-in functions}
+\title{Access Python's built-in functions}
 \usage{
 py_builtins
 }
 \description{
-These built-in functions are imported when \code{py_builtins} is first evaluated
-and Python is already initialized.
+\code{py_builtins} provides access to Python's standard built-in functions
+(e.g., \code{len}, \code{iter}, \code{isinstance}, etc.).
+}
+\details{
+The object is a \strong{locked active binding} and cannot be assigned to.
+It is lazily imported on first access; if Python is not ready, the import fails.
+In interactive sessions, an informational message is printed (can be suppressed
+via \code{options(scrubwren.show_py_builtins_message = FALSE)}).
+All built-ins are Python objects; convert to R objects with \code{\link[reticulate:r-py-conversion]{reticulate::py_to_r()}}.
+}
+\examples{
+\dontrun{
+# Suppress informational messages
+options(scrubwren.show_py_builtins_message = FALSE)
+
+# Access Python's built-in `len`
+lst <- reticulate::r_to_py(list(1, 2, 3))
+py_builtins$len(lst)  # returns 3
+
+# Use Python's `isinstance`
+py_builtins$isinstance(lst, py_builtins$list)
+
+}
+
 }
