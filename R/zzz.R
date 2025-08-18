@@ -1,59 +1,32 @@
 .scrubwren_state <- new.env()
+.scrubwren_state$py_builtins <- NULL
 
 py_builtins_bindings <- function(x) {
 
-  # Delay the import of builtins to give the user the opportunity to 
+  # Delay the import of builtins to give user the opportunity to 
   # declare which python interpreter to use.
   if (is.null(.scrubwren_state$py_builtins)) {
     
-    potential_py <- reticulate::py_discover_config()
+    msg_option <- getOption("scrubwren.show_py_builtins_message", default = TRUE)
     
-    if (is.null(potential_py)) {
-      cli::cli_alert_danger("No Python interpreter could be detected! Please install Python and set the interpreter using `reticulate::use_python()`.")
-    } else {
-      cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
-      cli::cli_alert_info("You can re-import `py_builtins` by calling `reimport_py_builtins()` after setting the interpreter with `reticulate::use_python()`.")
+    if (reticulate::py_available()) {
+      if (msg_option) cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
       .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
-      .scrubwren_state$py_config <- potential_py$python
+    } else {
+      if (msg_option) cli::cli_alert_danger("Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`")
     }
-    
-  } else {
-    current_python <- reticulate::py_config()$python
-    if (current_python != .scrubwren_state$py_config) 
-      cli::cli_alert_danger("The `py_builtins` were imported from {.file {(.scrubwren_state$py_config)}}, but the currently active Python interpreter is {.file {current_python}}! Please re-import the built-ins by calling `reimport_py_builtins()`.")
   }
-
+    
   # The binding is locked, so we can not assign value to it.
   
   return(.scrubwren_state$py_builtins)
 }
 
-#' Re-import Python's built-in functions
-#' 
-#' This function re-imports Python's built-in functions into [py_builtins] 
-#' by calling [reticulate::import_builtins()].
-#' 
-#' @param convert Boolean. Whether to automatically convert Python objects to R. See also [reticulate::import()].
-#' @return No return; called for side effect.
-#' @examples
-#' 
-#' \dontrun{
-#' reimport_py_builtins()
-#' }
-#' 
-#' @export
-reimport_py_builtins <- function(convert = FALSE) {
-  .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = convert)
-  .scrubwren_state$py_config <- reticulate::py_config()$python
-  return(invisible(NULL))
-}
 
 #' Python's built-in functions
 #' 
-#' These built-in functions are imported when the package loads. 
-#' By default, `reticulate::py_discover_config()` is used to determine the Python version. 
-#' To use a different Python interpreter, first set it with `reticulate::use_python()`, 
-#' then re-import the built-in functions by calling `reimport_py_builtins()`.
+#' These built-in functions are imported when `py_builtins` is first evaluated 
+#' and Python is already initialized. 
 #' 
 #' @usage py_builtins
 #' @name py_builtins
