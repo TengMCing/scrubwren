@@ -38,7 +38,7 @@ NULL
 #' @rdname py_iterable_check
 #' @export
 py_is_iterable <- function(obj) {
-  reticulate::py_config()
+  is_py_object
   if (!reticulate::is_py_object(obj)) cli::cli_abort("{substitute(obj)} is not a Python object!")
   result <- tryCatch(py_builtins$iter(obj),
                      python.builtin.TypeError = function(e) quote(TypeError))
