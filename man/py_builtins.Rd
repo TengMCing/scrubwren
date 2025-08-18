@@ -7,8 +7,6 @@
 py_builtins
 }
 \description{
-These built-in functions are imported when the package loads.
-By default, \code{reticulate::py_discover_config()} is used to determine the Python version.
-To use a different Python interpreter, first set it with \code{reticulate::use_python()},
-then re-import the built-in functions by calling \code{reimport_py_builtins()}.
+These built-in functions are imported when \code{py_builtins} is first evaluated
+and Python is already initialized.
 }
