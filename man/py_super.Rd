@@ -2,50 +2,77 @@
 % Please edit documentation in R/py_super.R
 \name{py_super}
 \alias{py_super}
+\alias{py_super_init}
 \title{Call Python's \code{super()} from R}
 \usage{
 py_super()
+
+py_super_init(...)
+}
+\arguments{
+\item{...}{Arguments to pass to the superclass initializer (for
+\code{py_super_init()} only).}
 }
 \value{
-A Python object represents a proxy to the superclass.
+\itemize{
+\item \code{py_super()} returns a Python object proxy to the superclass.
+\item \code{py_super_init()} returns \code{NULL} invisibly
+(or \code{\link[reticulate:py_none]{reticulate::py_none()}} if \code{convert = FALSE}), called for side effects.
+}
 }
 \description{
-This function re-exports Python's built-in \code{super()} as used internally by \code{reticulate}.
-It returns a proxy to the superclass of the current object.
+These functions provide access to Python's built-in \code{super()} mechanism
+from within R, making it easier to work with Python class inheritance
+when defining classes via \code{\link[reticulate:PyClass]{reticulate::PyClass()}} or \code{\link[=py_class]{py_class()}}.
 }
 \details{
-While \code{reticulate} does not formally document this function, inspecting the source
-of \code{PyClass} shows that it injects a \code{super()} function into the environment of each
-class method. This re-export makes that functionality explicit and directly accessible.
+\itemize{
+\item \code{py_super()} returns a proxy to the superclass of the current object,
+equivalent to Python's \code{super()}.
+\item \code{py_super_init()} directly calls the superclass initializer,
+equivalent to \verb{super().__init__(...)}.
+}
+
+While \code{reticulate} internally injects a \code{super()} reference into class
+methods, this re-export makes the functionality explicit and convenient
+for user code.
 }
 \examples{
 \dontrun{
-Employee <- py_class("Employee",
-                     `__init__` = function(self, name, id) {
-                       self$name <- name
-                       self$id <- id
-                       return(py_builtins$None)
-                     },
-                     get_email = function(self) {
-                       paste0(self$name, "_", self$id, "@company.com")
-                     })
+Employee <- py_class(
+  "Employee",
+  `__init__` = function(self, name, id) {
+    self$name <- name
+    self$id <- id
+    return(py_builtins$None)
+  },
+  get_email = function(self) {
+    paste0(self$name, "_", self$id, "@company.com")
+  }
+)
 
-Salary <- py_class("Salary", inherit = Employee,
-                   `__init__` = function(self, name, id, salary) {
-                     py_super$`__init__`(name, id)
-                     self$salary <- salary
-                     return(py_builtins$None)
-                   },
-                   get_salary_summary = function(self) {
-                     list(ID = self$id,
-                          Name = self$name,
-                          Email = self$get_email(),
-                          Salary = self$salary)
-                   })
+Salary <- py_class(
+  "Salary", inherit = Employee,
+  `__init__` = function(self, name, id, salary) {
+    # Option A: use py_super()
+    py_super()$`__init__`(name, id)
 
-mike_salary <- Salary("Mike", "1234", 1000)
-mike_salary$get_salary_summary()
-mike_salary$get_email()
+    # Option B: use py_super_init()
+    # py_super_init(name, id)
+
+    self$salary <- salary
+    return(py_builtins$None)
+  },
+  get_summary = function(self) {
+    list(ID = self$id,
+         Name = self$name,
+         Email = self$get_email(),
+         Salary = self$salary)
+  }
+)
+
+mike <- Salary("Mike", "1234", 1000)
+mike$get_summary()
 }
 
 }
