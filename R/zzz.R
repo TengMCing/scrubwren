@@ -1,5 +1,37 @@
+
+# .scrubwren_state --------------------------------------------------------
+
 .scrubwren_state <- new.env()
 .scrubwren_state$py_builtins <- NULL
+
+#' Access the internal `scrubwren` state
+#'
+#' Returns the hidden internal state object used by the `scrubwren` package
+#' for managing temporary values (e.g., during tuple unpacking or other helper
+#' operations).
+#'
+#' @return An environment containing internal package state.
+#'
+#' @details
+#' This function exposes the `.scrubwren_state` environment.  
+#' It is primarily intended for debugging or advanced use, and the
+#' structure of the state object is not guaranteed to remain stable
+#' across package versions.
+#'
+#' @examples
+#' \dontrun{
+#' st <- get_scrubwren_state()
+#' ls(st)             # List objects in the internal state
+#' st$last_tuple_unpack_value  # Access the last unpacked tuple value
+#' }
+#'
+#' @export
+get_scrubwren_state <- function() {
+  return(.scrubwren_state)
+}
+
+
+# py_builtins -------------------------------------------------------------
 
 py_builtins_bindings <- function(x) {
 
