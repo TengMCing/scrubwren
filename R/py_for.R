@@ -38,7 +38,7 @@ NULL
 #' @rdname py_iterable_check
 #' @export
 py_is_iterable <- function(obj) {
-  is_py_object
+  reticulate::py_init(quiet = TRUE)
   if (!reticulate::is_py_object(obj)) cli::cli_abort("{substitute(obj)} is not a Python object!")
   result <- tryCatch(py_builtins$iter(obj),
                      python.builtin.TypeError = function(e) quote(TypeError))
@@ -80,10 +80,21 @@ py_is_iterator <- function(obj) {
 #' - If `iterable` implements only `__iter__` but not `__next__`, it is
 #'   automatically converted into an iterator.  
 #' - Loop variables support tuple unpacking via [py_tuple_unpack()].  
-#' - Iteration stops when the underlying Python object raises `StopIteration`.  
+#' - The loop tracks whether the user calls `break` or `next` inside the loop:
+#'   * `break` exits the loop early, skipping any remaining iterations.
+#'   * `next` skips to the next iteration without stopping the loop entirely.
+#'   * If neither is called, the loop proceeds normally.  
 #'
 #' @examples
 #' \dontrun{
+#' 
+#' # Basic loop over a Python list with loop control
+#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+#'   if (reticulate::py_to_r(x) == 2) next  # skip printing 2
+#'   if (reticulate::py_to_r(x) == 3) break # exit before printing 3
+#'   print(x)
+#' })
+#' 
 #' # Loop over a Python list
 #' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
 #'   print(x)
@@ -122,6 +133,32 @@ py_for <- function(loop_spec, body, envir = parent.frame()) {
     item <- reticulate::iter_next(iter, completed = quote(StopIteration))
     if (identical(item, quote(StopIteration))) break
     py_tuple_unpack(var_sym, item, envir = envir, quote_vars = FALSE)
-    eval(substitute(body), envir = envir)
+    
+    body_expr <- bquote({
+      
+      # Track for loop control
+      assign("for_loop_control", "null", envir = scrubwren::get_scrubwren_state())
+      
+      while (TRUE) {
+        
+        # "user break" means the body has not been evaluated, 
+        # if this is the final state, it means the user `break` from the loop body.
+        # "no break" means the body has been evaluated,
+        # if this is the final state, it means the user may or may not call `next` but no `break`.
+        if (scrubwren::get_scrubwren_state()$for_loop_control == "null") {
+          assign("for_loop_control", "user break", envir = scrubwren::get_scrubwren_state())
+        } else {
+          assign("for_loop_control", "no break", envir = scrubwren::get_scrubwren_state())
+          break 
+        }
+
+        .(substitute(body))
+      }
+    }) 
+    
+    eval(body_expr, envir = envir)
+    
+    if (.scrubwren_state$for_loop_control == "user break") break
   }
 }
+
