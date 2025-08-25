@@ -29,11 +29,24 @@ iterator. This provides a convenient syntax for looping with destructuring
 \item If \code{iterable} implements only \verb{__iter__} but not \verb{__next__}, it is
 automatically converted into an iterator.
 \item Loop variables support tuple unpacking via \code{\link[=py_tuple_unpack]{py_tuple_unpack()}}.
-\item Iteration stops when the underlying Python object raises \code{StopIteration}.
+\item The loop tracks whether the user calls \code{break} or \code{next} inside the loop:
+\itemize{
+\item \code{break} exits the loop early, skipping any remaining iterations.
+\item \code{next} skips to the next iteration without stopping the loop entirely.
+\item If neither is called, the loop proceeds normally.
+}
 }
 }
 \examples{
 \dontrun{
+
+# Basic loop over a Python list with loop control
+py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+  if (reticulate::py_to_r(x) == 2) next  # skip printing 2
+  if (reticulate::py_to_r(x) == 3) break # exit before printing 3
+  print(x)
+})
+
 # Loop over a Python list
 py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
   print(x)

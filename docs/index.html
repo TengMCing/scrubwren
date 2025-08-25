@@ -19,13 +19,13 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Specialized Collection of Reticulate Utilities: Better Wrappers for A Smoother Experience">
 <meta name="description" content="A specialized collection of reticulate utilities, offering refined wrappers to enhance workflow and deliver a seamless data science experience in R.">
 <meta property="og:description" content="A specialized collection of reticulate utilities, offering refined wrappers to enhance workflow and deliver a seamless data science experience in R.">
-<meta property="og:image" content="/logo.png">
+<meta property="og:image" content="https://tengmcing.github.io/scrubwren/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">scrubwren</a>
 
@@ -59,7 +59,9 @@
 </div>
 <!-- badges: start -->
 <!-- badges: end -->
-<p>Specialized Collection of Reticulate Utilities: Better WRappers for a smoother ExperieNce</p>
+<p><code>scrubwren</code> stands for <strong>Specialized Collection of Reticulate Utilities: Better WRappers for a smoother ExperieNce</strong>. Its logo features the White-browed Scrubwren, a common bird in eastern and southeastern Australia.</p>
+<p>This package provides a set of R wrappers and helper functions for <code>reticulate</code>, designed to reduce the friction I often encounter when using Python deep learning libraries from R. While <code>reticulate</code> is powerful, some aspects can feel unintuitive or cumbersome, particularly for first-time users. At times, it even seems easier to write a Python function and run it via <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code>, rather than wrestling with <code>reticulate</code>, especially when it feels like I’m typing far more in R than I would in Python to achieve the same result.</p>
+<p>If you have an idea for a Python feature that could be wrapped more cleanly for use in R, feel free to open a GitHub issue. Suggestions with a potential implementation approach are welcome, but even ideas without a concrete proposal are appreciated.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -77,16 +79,22 @@
 </ol>
 </div>
 <div class="section level2">
-<h2 id="id_1-asscesible-python-built-in-functions">1. Asscesible Python built-in functions<a class="anchor" aria-label="anchor" href="#id_1-asscesible-python-built-in-functions"></a>
+<h2 id="id_1-explictly-initialized-python-session">1. Explictly initialized Python session<a class="anchor" aria-label="anchor" href="#id_1-explictly-initialized-python-session"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tengmcing.github.io/scrubwren/" class="external-link">scrubwren</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tengmcing.github.io/scrubwren/">scrubwren</a></span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/py_init.html">py_init</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ Initialized Python 3.11 from '/Users/patrickli/.virtualenvs/tf/bin/python'.</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="id_1-asscesible-python-built-in-functions">1. Asscesible Python built-in functions<a class="anchor" aria-label="anchor" href="#id_1-asscesible-python-built-in-functions"></a>
+</h2>
 <p>In <code>reticulate</code>, if you would like to directly use Python built-in functions like <code>type()</code>, you need to first import as with <code><a href="https://rstudio.github.io/reticulate/reference/import.html" class="external-link">reticulate::import_builtins()</a></code> into an R variable, and then call it. According to the <code>reticulate</code> documentation, this is primarily because the difference in the set of built-in functions in Python 2 and 3. In <code>scrubwren</code>, the built-in functions will be loaded automatically into <code>py_builtins</code> and ready to be used. It happens when you load the package, so we don’t have the name conflicts problem.</p>
 <p>When importing the built-in functions, a message will be issued telling you where those built-in functions are imported from. However, if you set <code>reticulate</code> to use a different Python interpreter, then you need to re-import the builtin</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">py_builtins</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span>
-<span><span class="co">#&gt; ✖ Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`</span></span>
-<span><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "abs"   "aiter" "all"   "anext" "any"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="id_1-define-python-class-with-py_class">1. Define Python class with <code>py_class()</code>
@@ -94,7 +102,7 @@
 </h2>
 <p>In <code>reticulate</code>, Python class definitions must be provided as a <strong>list</strong> via the <code>defs</code> argument in <code>PyClass</code>. With <code><a href="reference/py_class.html">py_class()</a></code>, you can instead supply them as regular function arguments. You can still specify <code>classname</code> as a character string and <code>inherit</code> as a list of Python objects, as usual.</p>
 <p>However, <code>PyClass</code> does not allow you to disable automatic conversion of Python objects to R, which means that any method defined in the class will return an R object whenever possible. This can be frustrating for data analysis tasks that rely on object indexing, since R starts at 1 while Python starts at 0. The <code>py_class</code> function lets you control this behavior through the <code>convert</code> argument.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Employee</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/py_class.html">py_class</a></span><span class="op">(</span><span class="st">"Employee"</span>, convert <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                     `__init__` <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">self</span>, <span class="va">name</span>, <span class="va">id</span><span class="op">)</span> <span class="op">{</span></span>
 <span>                       <span class="va">self</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="va">name</span></span>
@@ -105,7 +113,6 @@
 <span>                       <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">self</span><span class="op">$</span><span class="va">name</span>, <span class="st">"_"</span>, <span class="va">self</span><span class="op">$</span><span class="va">id</span>, <span class="st">"@company.com"</span><span class="op">)</span></span>
 <span>                     <span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">Mike</span> <span class="op">&lt;-</span> <span class="fu">Employee</span><span class="op">(</span><span class="st">"Mike"</span>, <span class="st">"1234"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ Importing `py_builtins` from Python 3.11 at '/Users/patrickli/.virtualenvs/tf/bin/python'.</span></span>
 <span><span class="va">Mike</span><span class="op">$</span><span class="fu">get_email</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 'Mike_1234@company.com'</span></span>
 <span><span class="va">Mike</span><span class="op">$</span><span class="fu">get_email</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -116,7 +123,7 @@
 <a class="anchor" aria-label="anchor" href="#id_2-turning-automatic-conversion-onoff-with-py_convert_on--py_convert_off"></a>
 </h2>
 <p><code><a href="reference/py_convert_toggle.html">py_convert_on()</a></code> enables automatic conversion of Python objects to R, while <code><a href="reference/py_convert_toggle.html">py_convert_off()</a></code> disables it. Note that the Python object must also be represented as an R environment for this to work, this typically includes Python modules or object instances, but not Python classes.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Mike</span><span class="op">$</span><span class="fu">get_email</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "python.builtin.str"    "python.builtin.object"</span></span>
 <span></span>
@@ -133,7 +140,7 @@
 <a class="anchor" aria-label="anchor" href="#id_3-call-the-superclass-initializer-with-py_super__init__-or-py_super_init"></a>
 </h2>
 <p>In <code>reticulate</code>, there is no formal documentation on how to call a superclass initializer when defining <code>__init__</code> via <code>PyClass</code>. Inspecting its source reveals that <code>PyClass</code> injects a <code>super()</code> function into the environment of each class method. This allows you to call the superclass initializer with <code>super()$`__init__`()</code>. The <code>scrubwren</code> package makes this explicit by re-exporting <code>super()</code> as <code><a href="reference/py_super.html">py_super()</a></code> and providing a convenient wrapper <code><a href="reference/py_super.html">py_super_init()</a></code> for <code>py_super()$`__init__()`</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">Salary</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/py_class.html">py_class</a></span><span class="op">(</span><span class="st">"Salary"</span>, inherit <span class="op">=</span> <span class="va">Employee</span>, convert <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>                   `__init__` <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">self</span>, <span class="va">name</span>, <span class="va">id</span>, <span class="va">salary</span><span class="op">)</span> <span class="op">{</span></span>
 <span>                     <span class="fu"><a href="reference/py_super.html">py_super_init</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">id</span><span class="op">)</span></span>

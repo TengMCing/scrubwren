@@ -3,11 +3,11 @@
 iterator. This provides a convenient syntax for looping with destructuring
 (tuple unpacking) similar to Python's for statement."><meta property="og:description" content="Executes a Python-style for loop in R, iterating over a Python iterable or
 iterator. This provides a convenient syntax for looping with destructuring
-(tuple unpacking) similar to Python's for statement."><meta property="og:image" content="/logo.png"></head><body>
+(tuple unpacking) similar to Python's for statement."><meta property="og:image" content="https://tengmcing.github.io/scrubwren/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">scrubwren</a>
 
@@ -75,12 +75,23 @@ Defaults to the calling environment.</p></dd>
 <ul><li><p>If <code>iterable</code> implements only <code>__iter__</code> but not <code>__next__</code>, it is
 automatically converted into an iterator.</p></li>
 <li><p>Loop variables support tuple unpacking via <code><a href="py_tuple_unpack.html">py_tuple_unpack()</a></code>.</p></li>
-<li><p>Iteration stops when the underlying Python object raises <code>StopIteration</code>.</p></li>
+<li><p>The loop tracks whether the user calls <code><a href="https://rdrr.io/r/base/Control.html" class="external-link">break</a></code> or <code><a href="https://rdrr.io/r/base/Control.html" class="external-link">next</a></code> inside the loop:</p><ul><li><p><code><a href="https://rdrr.io/r/base/Control.html" class="external-link">break</a></code> exits the loop early, skipping any remaining iterations.</p></li>
+<li><p><code><a href="https://rdrr.io/r/base/Control.html" class="external-link">next</a></code> skips to the next iteration without stopping the loop entirely.</p></li>
+<li><p>If neither is called, the loop proceeds normally.</p></li>
+</ul></li>
 </ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Basic loop over a Python list with loop control</span></span></span>
+<span class="r-in"><span><span class="fu">py_for</span><span class="op">(</span><span class="va">x</span> <span class="op">~</span> <span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">r_to_py</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>, <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="kw">if</span> <span class="op">(</span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">py_to_r</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">==</span> <span class="fl">2</span><span class="op">)</span> <span class="kw">next</span>  <span class="co"># skip printing 2</span></span></span>
+<span class="r-in"><span>  <span class="kw">if</span> <span class="op">(</span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">py_to_r</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">==</span> <span class="fl">3</span><span class="op">)</span> <span class="kw">break</span> <span class="co"># exit before printing 3</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Loop over a Python list</span></span></span>
 <span class="r-in"><span><span class="fu">py_for</span><span class="op">(</span><span class="va">x</span> <span class="op">~</span> <span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">r_to_py</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span>, <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></span>

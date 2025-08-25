@@ -1,4 +1,32 @@
-url: ~
+url: https://tengmcing.github.io/scrubwren
 template:
   bootstrap: 5
-
+  bootswatch: minty
+  bslib:
+    pkgdown-nav-height: 100px
+reference:
+- title: "Python initialization"
+  contents:
+  - py_init
+- title: "Python's built-in functions"
+  contents:
+  - py_builtins
+- title: "Python class"
+  contents:
+  - py_class
+  - py_super
+  - py_super_init
+- title: "Python for loop"
+  contents:
+  - py_for
+  - py_is_iterable
+  - py_is_iterator
+  - py_tuple_unpack
+- title: "Automatic conversion"
+  contents:
+  - py_convert_on
+  - py_convert_off
+- title: "Internal"
+  contents:
+  - get_scrubwren_state
+    
