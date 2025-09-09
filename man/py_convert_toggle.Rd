@@ -6,12 +6,12 @@
 \alias{py_convert_off}
 \title{Toggle automatic Python-to-R conversion}
 \usage{
-py_convert_on(env)
+py_convert_on(obj)
 
-py_convert_off(env)
+py_convert_off(obj)
 }
 \arguments{
-\item{env}{Environment. A Python object proxy as returned by \code{reticulate}. Must be an R
+\item{obj}{Environment. A Python object proxy as returned by \code{reticulate}. Must be an R
 environment representing a Python object.}
 }
 \value{
@@ -27,7 +27,7 @@ converted to their R equivalents when accessed through \code{reticulate}.
 \item \code{py_convert_off()} disables automatic conversion for a given Python object.
 }
 
-The \code{env} must be a Python object proxy (typically a module, class instance,
+The \code{obj} must be a Python object proxy (typically a module, class instance,
 or similar R environment created by \code{reticulate}).
 }
 \examples{

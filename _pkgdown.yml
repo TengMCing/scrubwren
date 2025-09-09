@@ -16,9 +16,10 @@ reference:
   - py_class
   - py_super
   - py_super_init
-- title: "Python for loop"
+- title: "Python for loop and comprehension"
   contents:
   - py_for
+  - py_comprehension
   - py_is_iterable
   - py_is_iterator
   - py_tuple_unpack

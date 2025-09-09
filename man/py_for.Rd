@@ -4,7 +4,7 @@
 \alias{py_for}
 \title{Python-style \code{for} loops in R}
 \usage{
-py_for(loop_spec, body, envir = parent.frame())
+py_for(loop_spec, body, env = parent.frame())
 }
 \arguments{
 \item{loop_spec}{A two-sided formula of the form \code{vars ~ iterable}, where
@@ -13,7 +13,7 @@ py_for(loop_spec, body, envir = parent.frame())
 
 \item{body}{An R expression to evaluate on each iteration.}
 
-\item{envir}{The environment in which to run the loop and evaluate the body.
+\item{env}{The environment in which to run the loop and evaluate the body.
 Defaults to the calling environment.}
 }
 \value{

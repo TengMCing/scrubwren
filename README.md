@@ -6,8 +6,24 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-Specialized Collection of Reticulate Utilities: Better WRappers for a
-smoother ExperieNce
+`scrubwren` stands for **Specialized Collection of Reticulate Utilities:
+Better WRappers for a smoother ExperieNce**. Its logo features the
+White-browed Scrubwren, a common bird in eastern and southeastern
+Australia.
+
+This package provides a set of R wrappers and helper functions for
+`reticulate`, designed to reduce the friction I often encounter when
+using Python deep learning libraries from R. While `reticulate` is
+powerful, some aspects can feel unintuitive or cumbersome, particularly
+for first-time users. At times, it even seems easier to write a Python
+function and run it via `system()`, rather than wrestling with
+`reticulate`, especially when it feels like I’m typing far more in R
+than I would in Python to achieve the same result.
+
+If you have an idea for a Python feature that could be wrapped more
+cleanly for use in R, feel free to open a GitHub issue. Suggestions with
+a potential implementation approach are welcome, but even ideas without
+a concrete proposal are appreciated.
 
 ## Installation
 
@@ -26,11 +42,18 @@ remotes::install_github("TengMCing/scrubwren")
 2.  [Turning automatic conversion on/off with `py_convert_on()` /
     `py_convert_off()`](#2-turning-automatic-conversion-onoff-with-py_convert_on--py_convert_off)
 
-## 1. Asscesible Python built-in functions
+## 1. Explictly initialized Python session
 
 ``` r
 library(scrubwren)
 ```
+
+``` r
+py_init()
+#> ℹ Initialized Python 3.11 from '/Users/patrickli/.virtualenvs/tf/bin/python'.
+```
+
+## 1. Asscesible Python built-in functions
 
 In `reticulate`, if you would like to directly use Python built-in
 functions like `type()`, you need to first import as with
@@ -48,8 +71,7 @@ re-import the builtin
 
 ``` r
 names(py_builtins)[1:5]
-#> ✖ Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`
-#> NULL
+#> [1] "abs"   "aiter" "all"   "anext" "any"
 ```
 
 ## 1. Define Python class with `py_class()`
@@ -78,7 +100,6 @@ Employee <- py_class("Employee", convert = FALSE,
                        paste0(self$name, "_", self$id, "@company.com")
                      })
 Mike <- Employee("Mike", "1234")
-#> ℹ Importing `py_builtins` from Python 3.11 at '/Users/patrickli/.virtualenvs/tf/bin/python'.
 Mike$get_email()
 #> 'Mike_1234@company.com'
 Mike$get_email() |> class()

@@ -12,19 +12,15 @@ py_builtins
 }
 \details{
 The object is a \strong{locked active binding} and cannot be assigned to.
-It is lazily imported on first access; if Python is not ready, the import fails.
-In interactive sessions, an informational message is printed (can be suppressed
-via \code{options(scrubwren.show_py_builtins_message = FALSE)}).
+It is lazily imported on first access;
 All built-ins are Python objects; convert to R objects with \code{\link[reticulate:r-py-conversion]{reticulate::py_to_r()}}.
 }
 \examples{
 \dontrun{
-# Suppress informational messages
-options(scrubwren.show_py_builtins_message = FALSE)
 
 # Access Python's built-in `len`
 lst <- reticulate::r_to_py(list(1, 2, 3))
-py_builtins$len(lst)  # returns 3
+py_builtins$len(lst)
 
 # Use Python's `isinstance`
 py_builtins$isinstance(lst, py_builtins$list)

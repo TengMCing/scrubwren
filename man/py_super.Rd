@@ -5,11 +5,17 @@
 \alias{py_super_init}
 \title{Call Python's \code{super()} from R}
 \usage{
-py_super()
+py_super(type, object_or_type)
 
 py_super_init(...)
 }
 \arguments{
+\item{type}{Optional. The class or \verb{__class__} symbol, for advanced
+two-argument \code{super()} usage. Ignored if missing.}
+
+\item{object_or_type}{Optional. Typically \code{self}, for advanced
+two-argument \code{super()} usage. Ignored if missing.}
+
 \item{...}{Arguments to pass to the superclass initializer (for
 \code{py_super_init()} only).}
 }
@@ -28,14 +34,22 @@ when defining classes via \code{\link[reticulate:PyClass]{reticulate::PyClass()}
 \details{
 \itemize{
 \item \code{py_super()} returns a proxy to the superclass of the current object,
-equivalent to Python's \code{super()}.
+equivalent to Python's \code{super()}. It can be used in two forms:
+\itemize{
+\item \code{py_super()} (no arguments): behaves like \code{super()} with implicit
+resolution provided by \code{reticulate}.
+\item \code{py_super(type, object_or_type)} (two arguments): advanced usage
+equivalent to \code{super(type, object_or_type)} in Python, e.g.
+\code{py_super(A, self)} or \verb{py_super(__class__, self)}.
+}
 \item \code{py_super_init()} directly calls the superclass initializer,
-equivalent to \verb{super().__init__(...)}.
+equivalent to \verb{super().__init__(...)}. Unlike \code{py_super()}, it always
+refers to the next class in the MRO and does not accept type arguments.
 }
 
-While \code{reticulate} internally injects a \code{super()} reference into class
-methods, this re-export makes the functionality explicit and convenient
-for user code.
+While \code{reticulate} internally injects a zero-argument \code{super()} reference
+into class methods, this re-export makes the functionality explicit and
+convenient for user code.
 }
 \examples{
 \dontrun{
@@ -45,34 +59,25 @@ Employee <- py_class(
     self$name <- name
     self$id <- id
     return(py_builtins$None)
-  },
-  get_email = function(self) {
-    paste0(self$name, "_", self$id, "@company.com")
   }
 )
 
 Salary <- py_class(
   "Salary", inherit = Employee,
   `__init__` = function(self, name, id, salary) {
-    # Option A: use py_super()
+    # Option A: use implicit super
     py_super()$`__init__`(name, id)
 
-    # Option B: use py_super_init()
+    # Option B: use advanced two-argument super
+    # py_super(Salary, self)$`__init__`(name, id)
+
+    # Option C: use py_super_init()
     # py_super_init(name, id)
 
     self$salary <- salary
     return(py_builtins$None)
-  },
-  get_summary = function(self) {
-    list(ID = self$id,
-         Name = self$name,
-         Email = self$get_email(),
-         Salary = self$salary)
   }
 )
-
-mike <- Salary("Mike", "1234", 1000)
-mike$get_summary()
 }
 
 }

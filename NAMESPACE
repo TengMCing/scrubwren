@@ -3,6 +3,7 @@
 export(get_scrubwren_state)
 export(py_builtins)
 export(py_class)
+export(py_comprehension)
 export(py_convert_off)
 export(py_convert_on)
 export(py_for)

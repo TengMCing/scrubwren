@@ -40,16 +40,16 @@ converted to their R equivalents when accessed through <code>reticulate</code>.<
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">py_convert_on</span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">py_convert_on</span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">py_convert_off</span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">py_convert_off</span><span class="op">(</span><span class="va">obj</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-env">env<a class="anchor" aria-label="anchor" href="#arg-env"></a></dt>
+<dl><dt id="arg-obj">obj<a class="anchor" aria-label="anchor" href="#arg-obj"></a></dt>
 <dd><p>Environment. A Python object proxy as returned by <code>reticulate</code>. Must be an R
 environment representing a Python object.</p></dd>
 
@@ -63,7 +63,7 @@ environment representing a Python object.</p></dd>
 
 <ul><li><p><code>py_convert_on()</code> enables automatic conversion for a given Python object.</p></li>
 <li><p><code>py_convert_off()</code> disables automatic conversion for a given Python object.</p></li>
-</ul><p>The <code>env</code> must be a Python object proxy (typically a module, class instance,
+</ul><p>The <code>obj</code> must be a Python object proxy (typically a module, class instance,
 or similar R environment created by <code>reticulate</code>).</p>
     </div>
 

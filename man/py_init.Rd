@@ -10,6 +10,8 @@ py_init(python_path = reticulate::py_discover_config()$python, quiet = FALSE)
 \item{python_path}{Character. Path to the Python
 executable to use. Defaults to the \code{python} element returned by
 \code{\link[reticulate:py_discover_config]{reticulate::py_discover_config()}}.}
+
+\item{quiet}{Boolean. Whether to suppress message.}
 }
 \value{
 An invisible Python configuration object, as returned by
