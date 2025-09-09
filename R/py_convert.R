@@ -6,10 +6,10 @@
 #' - `py_convert_on()` enables automatic conversion for a given Python object.
 #' - `py_convert_off()` disables automatic conversion for a given Python object.
 #'
-#' The `env` must be a Python object proxy (typically a module, class instance,
+#' The `obj` must be a Python object proxy (typically a module, class instance,
 #' or similar R environment created by `reticulate`).  
 #'
-#' @param env Environment. A Python object proxy as returned by `reticulate`. Must be an R
+#' @param obj Environment. A Python object proxy as returned by `reticulate`. Must be an R
 #' environment representing a Python object.  
 #'
 #' @return Invisibly returns `env` with its `convert` flag updated.  
@@ -33,16 +33,16 @@ NULL
 
 #' @rdname py_convert_toggle
 #' @export
-py_convert_on <- function(env) {
-  if (!reticulate::is_py_object(env)) cli::cli_abort("{substitute(env)} is not a Python object!")
-  assign("convert", TRUE, env)
-  return(invisible(env))
+py_convert_on <- function(obj) {
+  if (!reticulate::is_py_object(obj)) cli::cli_abort("Argument `obj` is not a Python object!")
+  assign("convert", TRUE, obj)
+  return(invisible(obj))
 }
 
 #' @rdname py_convert_toggle
 #' @export
-py_convert_off <- function(env) {
-  if (!reticulate::is_py_object(env)) cli::cli_abort("{substitute(env)} is not a Python object!")
-  assign("convert", FALSE, env)
-  return(invisible(env))
+py_convert_off <- function(obj) {
+  if (!reticulate::is_py_object(obj)) cli::cli_abort("Argument `obj` is not a Python object!")
+  assign("convert", FALSE, obj)
+  return(invisible(obj))
 }
