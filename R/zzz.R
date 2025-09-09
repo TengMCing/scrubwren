@@ -41,12 +41,14 @@ py_builtins_bindings <- function(x) {
     
     msg_option <- getOption("scrubwren.show_py_builtins_message", default = TRUE)
     
-    if (reticulate::py_available()) {
-      if (msg_option && interactive()) cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
-      .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
-    } else {
-      if (msg_option && interactive()) cli::cli_alert_danger("Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`")
-    }
+    .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE, delay_load = TRUE) 
+    
+    # if (reticulate::py_available()) {
+    #   if (msg_option && interactive()) cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
+    #   .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
+    # } else {
+    #   if (msg_option && interactive()) cli::cli_alert_danger("Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`")
+    # }
   }
     
   # The binding is locked, so we can not assign value to it.
@@ -62,20 +64,15 @@ py_builtins_bindings <- function(x) {
 #'
 #' @details
 #' The object is a **locked active binding** and cannot be assigned to.
-#' It is lazily imported on first access; if Python is not ready, the import fails.
-#' In interactive sessions, an informational message is printed (can be suppressed
-#' via `options(scrubwren.show_py_builtins_message = FALSE)`).  
+#' It is lazily imported on first access;   
 #' All built-ins are Python objects; convert to R objects with [reticulate::py_to_r()].
-
 #'
 #' @examples
 #' \dontrun{
-#' # Suppress informational messages
-#' options(scrubwren.show_py_builtins_message = FALSE)
 #' 
 #' # Access Python's built-in `len`
 #' lst <- reticulate::r_to_py(list(1, 2, 3))
-#' py_builtins$len(lst)  # returns 3
+#' py_builtins$len(lst)
 #'
 #' # Use Python's `isinstance`
 #' py_builtins$isinstance(lst, py_builtins$list)
