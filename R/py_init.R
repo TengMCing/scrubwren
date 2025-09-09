@@ -12,6 +12,7 @@
 #' @param python_path Character. Path to the Python
 #'   executable to use. Defaults to the `python` element returned by
 #'   [reticulate::py_discover_config()].
+#' @param quiet Boolean. Whether to suppress message.
 #'
 #' @return An invisible Python configuration object, as returned by
 #'   [reticulate::py_config()].
