@@ -4,7 +4,7 @@
 \alias{py_for}
 \title{Python-style \code{for} loops in R}
 \usage{
-py_for(loop_spec, body, env = parent.frame())
+py_for(loop_spec, body, env = parent.frame(), enable_loop_control = TRUE)
 }
 \arguments{
 \item{loop_spec}{A two-sided formula of the form \code{vars ~ iterable}, where
@@ -15,6 +15,14 @@ py_for(loop_spec, body, env = parent.frame())
 
 \item{env}{The environment in which to run the loop and evaluate the body.
 Defaults to the calling environment.}
+
+\item{enable_loop_control}{Boolean. if \code{TRUE}, the loop monitors user calls
+to \code{break} or \code{next} at the top level of the \code{py_for()} body. These statements
+then control the loop as expected. If \code{FALSE}, any \code{break} or \code{next}
+at the top level of the body will trigger an error.
+Note that \code{break} and \code{next} inside nested loops within the body are not
+governed by this setting; their behavior depends on the configuration of
+the nested loops themselves.}
 }
 \value{
 Invisibly returns \code{NULL}. Called for side effects.
@@ -29,23 +37,54 @@ iterator. This provides a convenient syntax for looping with destructuring
 \item If \code{iterable} implements only \verb{__iter__} but not \verb{__next__}, it is
 automatically converted into an iterator.
 \item Loop variables support tuple unpacking via \code{\link[=py_tuple_unpack]{py_tuple_unpack()}}.
-\item The loop tracks whether the user calls \code{break} or \code{next} inside the loop:
+\item If \code{enable_loop_control = TRUE}, the loop tracks whether the user
+calls \code{break} or \code{next} inside the loop:
 \itemize{
 \item \code{break} exits the loop early, skipping any remaining iterations.
 \item \code{next} skips to the next iteration without stopping the loop entirely.
 \item If neither is called, the loop proceeds normally.
 }
 }
+\subsection{Performance warnings}{
+
+Looping over Python objects in R can be \strong{inefficient}. In each iteration,
+\code{reticulate} must pass handles between R and Python, often performing
+implicit or explicit object conversions and copies.
+If the \code{body} of your loop is lightweight and you need to iterate over a
+large Python object, consider defining a Python function via
+\code{\link[reticulate:py_run]{reticulate::py_run_string()}} or \link{py_builtins}\verb{$exec()} and calling it directly.
+You can also use \code{r.var} (where \code{var} is any R variable name) to access or
+assign R objects directly from Python, which may help avoid unnecessary data transfer.
+Native Python tools are \strong{significantly faster} in such cases!
+
+For example, instead of doing:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{y <- py_builtins$int(0L)
+py_for(x ~ reticulate::r_to_py(1:10000), y <- y + x^2)
+}\if{html}{\out{</div>}}
+
+it is better to do:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{function_def <- "
+def cumsum_square(n):
+    return sum([x ** 2 for x in range(1, n + 1)])
+"
+my_func <- reticulate::py_run_string(function_def, local = TRUE, convert = FALSE)
+y <- my_func$cumsum_square(100000L)
+}\if{html}{\out{</div>}}
+
+Note that we need to set \code{local = TRUE}, so that the returned dictionary
+is not within the main module. The main module created by \code{reticulate}
+automatically converts Python objects to R objects, unless we disable this
+behavior for the entire module. Doing so, however, could interfere
+with \code{reticulate}'s internals. Defining the function in a private dictionary
+with \code{convert = FALSE} allows us to keep objects as native Python types,
+which is important when working with large integers that could otherwise
+overflow when converted back to R.
+}
 }
 \examples{
 \dontrun{
-
-# Basic loop over a Python list with loop control
-py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
-  if (reticulate::py_to_r(x) == 2) next  # skip printing 2
-  if (reticulate::py_to_r(x) == 3) break # exit before printing 3
-  print(x)
-})
 
 # Loop over a Python list
 py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
@@ -64,6 +103,40 @@ arr <- np$array(c(10, 20, 30))
 py_for(val ~ arr, {
   print(val)
 })
+
+# Basic loop over a Python list with loop control
+py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+  if (reticulate::py_to_r(x) == 2) next  # skip printing 2
+  if (reticulate::py_to_r(x) == 3) break # exit before printing 3
+  print(x)
+})
+
+# Loop with loop control disabled
+py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+
+  # Local loop `break` is allowed
+  for (i in 1:10) break  
+  
+  # Local `py_for` loop `break` is allowed
+  py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), break)
+  
+  # Using break or next here will trigger an error
+  next 
+  print(x)
+}, enable_loop_control = FALSE)
+
+# Loop with inner loop control disabled
+py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+
+  # Nested `py_for` with loop control disabled
+  # Using `break` here will trigger an error
+  py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), 
+         break, 
+         enable_loop_control = FALSE)
+         
+  print(x)
+})
+
 }
 
 }

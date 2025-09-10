@@ -12,9 +12,15 @@ py_comprehension(
 )
 }
 \arguments{
-\item{loop_spec_list}{Formula/List. A single formula or a vector of formulas specifying the loops.
-Each formula must be of the form \code{var ~ iterable} or \code{var ~ iterable | condition}, where \code{var} is
-the loop variable and \code{iterable} is a Python iterable object.}
+\item{loop_spec_list}{Formula/List. A single formula or a
+list of formulas specifying the loops. Each formula must have the form
+\code{var ~ iterable} or \code{var ~ iterable | condition}, where \code{var} is the
+loop variable and \code{iterable} is a Python iterable.
+When multiple formulas are provided, each additional formula defines a
+deeper loop, with the last formula representing the innermost loop.
+The \code{condition} will be wrapped using \link{py_builtins}\verb{$bool()}, so it can be
+either an R boolean or a Python value compatible with Python’s
+\href{https://docs.python.org/3/library/stdtypes.html#truth}{truth-testing procedure}.}
 
 \item{body}{Expression. An R expression to evaluate inside the innermost loop.
 Its result is collected into the comprehension output.}
@@ -26,20 +32,24 @@ variables created or modified inside \code{body} do not affect the outer
 environment unless global modification is explicitly used.}
 
 \item{format}{A Python collection type or a regular R list to store the results.
-Defaults to a Python list (\code{py_builtins$list()}).}
+Defaults to a Python list (\link{py_builtins}\verb{$list()}).}
 }
 \value{
 A Python collection or R list containing the results of the comprehension.
 }
 \description{
 Evaluate Python-like comprehensions in R. Supports multiple nested loops
-with optional conditions and returns results in a specified Python
-collection type (\code{list}, \code{tuple}, \code{set}, or \code{dict}),
-or as a regular R list.
+with optional conditions, returning results in a chosen Python collection
+type (\code{list}, \code{tuple}, \code{set}, or \code{dict}) or as a regular R list.
+Conceptually, it works like \code{\link[=lapply]{lapply()}} for Python objects, but
+this function offers additional return types and more flexible
+control over iteration.
 }
 \details{
-When \code{format = py_builtins$dict()}, each evaluation of \code{body} must
-return a \strong{key-value pair}. Valid pair formats include:
+\subsection{Dictionary return type}{
+
+When \verb{format = }\link{py_builtins}\verb{$dict()}, each evaluation of \code{body} must
+be a \strong{key-value pair}. Valid pair formats include:
 \itemize{
 \item A Python tuple of length 2
 \item A Python list of length 2
@@ -47,18 +57,64 @@ return a \strong{key-value pair}. Valid pair formats include:
 }
 
 The first element is used as the key and the second as the value.
-This allows creating dictionaries in Python style directly from R comprehensions.
+This allows creating dictionaries in Python style directly from R
+comprehensions.
+}
+
+\subsection{Side effects}{
+
+Like \code{\link[=lapply]{lapply()}}, this function evaluates \code{body} in a local scope, so
+assignments normally do not affect the caller environment. To produce side
+effects, use \link{<<-}, \code{\link[=assign]{assign()}} with a suitable environment, or modify an
+environment variable directly (see \code{\link[=environment]{environment()}}).
+}
+
+\subsection{Performance warnings}{
+
+Looping over Python objects in R can be \strong{inefficient}. In each iteration,
+\code{reticulate} must pass handles between R and Python, often performing
+implicit or explicit object conversions and copies.
+If the \code{body} of your loop is lightweight and you need to iterate over a
+large Python object, consider defining a Python function via
+\code{\link[reticulate:py_run]{reticulate::py_run_string()}} or \link{py_builtins}\verb{$exec()} and calling it directly.
+You can also use \code{r.var} (where \code{var} is any R variable name) to access or
+assign R objects directly from Python, which may help avoid unnecessary data transfer.
+Native Python tools are \strong{significantly faster} in such cases!
+
+For example, instead of doing:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{y <- py_comprehension(x ~ reticulate::r_to_py(1:100000), x^2)
+}\if{html}{\out{</div>}}
+
+it is better to do:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{function_def <- "
+def list_square(n):
+    return [x ** 2 for x in range(1, n + 1)]
+"
+my_func <- reticulate::py_run_string(function_def, local = TRUE, convert = FALSE)
+y <- my_func$list_square(100000L)
+}\if{html}{\out{</div>}}
+
+Note that we need to set \code{local = TRUE}, so that the returned dictionary
+is not within the main module. The main module created by \code{reticulate}
+automatically converts Python objects to R objects, unless we disable this
+behavior for the entire module. Doing so, however, could interfere
+with \code{reticulate}'s internals. Defining the function in a private dictionary
+allows us to keep objects as native Python types, which is important when
+working with large integers that could otherwise overflow when converted
+back to R.
+}
 }
 \examples{
 \dontrun{
-# Simple Python-style comprehension (squares)
+# Simple Python-style comprehension
 py_comprehension(
   i ~ reticulate::r_to_py(1:3),
   i^2
 )
-# Returns a Python list: [1, 4, 9]
 
-# Nested loops with conditions using Python lists
+# Nested loops with conditions
 test <- reticulate::r_to_py(list(list(1, 2, 3), list(1, 2), list(1)))
 py_comprehension(
   c(
@@ -91,7 +147,6 @@ py_comprehension(
   i^2,
   format = py_builtins$set()
 )
-# Returns a Python set: {1, 4, 9}
 
 # Return results as a Python dict
 py_comprehension(
