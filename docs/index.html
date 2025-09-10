@@ -60,7 +60,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 <p><code>scrubwren</code> stands for <strong>Specialized Collection of Reticulate Utilities: Better WRappers for a smoother ExperieNce</strong>. Its logo features the White-browed Scrubwren, a common bird in eastern and southeastern Australia.</p>
-<p>This package provides a set of R wrappers and helper functions for <code>reticulate</code>, designed to reduce the friction I often encounter when using Python deep learning libraries from R. While <code>reticulate</code> is powerful, some aspects can feel unintuitive or cumbersome, particularly for first-time users. At times, it even seems easier to write a Python function and run it via <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code>, rather than wrestling with <code>reticulate</code>, especially when it feels like I’m typing far more in R than I would in Python to achieve the same result.</p>
+<p>This package provides a set of R wrappers and helper functions for <code>reticulate</code>, designed to reduce the friction users often encounter when using Python deep learning libraries from R. While <code>reticulate</code> is powerful, some aspects can feel unintuitive or cumbersome, particularly for first-time users. At times, it even seems easier to write a Python function and run it via <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code>, rather than wrestling with <code>reticulate</code>, especially when it feels like it is typing far more in R than it would in Python to achieve the same result.</p>
 <p>If you have an idea for a Python feature that could be wrapped more cleanly for use in R, feel free to open a GitHub issue. Suggestions with a potential implementation approach are welcome, but even ideas without a concrete proposal are appreciated.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -83,12 +83,13 @@
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tengmcing.github.io/scrubwren/">scrubwren</a></span><span class="op">)</span></span></code></pre></div>
+<p>In <code>reticulate</code> only one Python session can be bound to the current R session, and it is done silently when one call <code>reticulate</code>’s most functions. <code><a href="reference/py_init.html">py_init()</a></code> makes this process explicit. The interpreter path can be supplied by the <code>python_path</code> argument, otherwise it will discover the Python using <code><a href="https://rstudio.github.io/reticulate/reference/py_discover_config.html" class="external-link">reticulate::py_discover_config()</a></code></p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/py_init.html">py_init</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ℹ Initialized Python 3.11 from '/Users/patrickli/.virtualenvs/tf/bin/python'.</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="id_1-asscesible-python-built-in-functions">1. Asscesible Python built-in functions<a class="anchor" aria-label="anchor" href="#id_1-asscesible-python-built-in-functions"></a>
+<h2 id="id_2-asscesible-python-built-in-functions">2. Asscesible Python built-in functions<a class="anchor" aria-label="anchor" href="#id_2-asscesible-python-built-in-functions"></a>
 </h2>
 <p>In <code>reticulate</code>, if you would like to directly use Python built-in functions like <code>type()</code>, you need to first import as with <code><a href="https://rstudio.github.io/reticulate/reference/import.html" class="external-link">reticulate::import_builtins()</a></code> into an R variable, and then call it. According to the <code>reticulate</code> documentation, this is primarily because the difference in the set of built-in functions in Python 2 and 3. In <code>scrubwren</code>, the built-in functions will be loaded automatically into <code>py_builtins</code> and ready to be used. It happens when you load the package, so we don’t have the name conflicts problem.</p>
 <p>When importing the built-in functions, a message will be issued telling you where those built-in functions are imported from. However, if you set <code>reticulate</code> to use a different Python interpreter, then you need to re-import the builtin</p>
