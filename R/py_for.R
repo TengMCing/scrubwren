@@ -72,6 +72,13 @@ py_is_iterator <- function(obj) {
 #' @param body An R expression to evaluate on each iteration.
 #' @param env The environment in which to run the loop and evaluate the body.
 #'   Defaults to the calling environment.
+#' @param enable_loop_control Boolean. if `TRUE`, the loop monitors user calls
+#'   to `break` or `next` at the top level of the `py_for()` body. These statements
+#'   then control the loop as expected. If `FALSE`, any `break` or `next`
+#'   at the top level of the body will trigger an error.  
+#'   Note that `break` and `next` inside nested loops within the body are not
+#'   governed by this setting; their behavior depends on the configuration of
+#'   the nested loops themselves.
 #'
 #' @return Invisibly returns `NULL`. Called for side effects.
 #'
@@ -111,10 +118,44 @@ py_is_iterator <- function(obj) {
 #' py_for(val ~ arr, {
 #'   print(val)
 #' })
+#' 
+#' # Basic loop over a Python list with loop control
+#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+#'   if (reticulate::py_to_r(x) == 2) next  # skip printing 2
+#'   if (reticulate::py_to_r(x) == 3) break # exit before printing 3
+#'   print(x)
+#' })
+#' 
+#' # Loop with loop control disabled
+#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+#' 
+#'   # Local loop `break` is allowed
+#'   for (i in 1:10) break  
+#'   
+#'   # Local `py_for` loop `break` is allowed
+#'   py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), break)
+#'   
+#'   # Using break or next here will trigger an error
+#'   next 
+#'   print(x)
+#' }, enable_loop_control = FALSE)
+#' 
+#' # Loop with inner loop control disabled
+#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
+#' 
+#'   # Nested `py_for` with loop control disabled
+#'   # Using `break` here will trigger an error
+#'   py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), 
+#'          break, 
+#'          enable_loop_control = FALSE)
+#'          
+#'   print(x)
+#' })
+#' 
 #' }
 #'
 #' @export
-py_for <- function(loop_spec, body, env = parent.frame()) {
+py_for <- function(loop_spec, body, env = parent.frame(), enable_loop_control = TRUE) {
   if (!is.call(loop_spec) || loop_spec[[1]] != as.symbol("~"))
     cli::cli_abort("The loop specification needs to be a formula!")
   
@@ -134,31 +175,35 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
     if (identical(item, quote(StopIteration))) break
     py_tuple_unpack(var_sym, item, envir = env, quote_vars = FALSE)
     
-    body_expr <- bquote({
-      
-      # Track for loop control
-      assign("for_loop_control", "null", envir = scrubwren::get_scrubwren_state())
-      
-      while (TRUE) {
+    if (enable_loop_control) {
+      body_expr <- bquote({
         
-        # "user break" means the body has not been evaluated, 
-        # if this is the final state, it means the user `break` from the loop body.
-        # "no break" means the body has been evaluated,
-        # if this is the final state, it means the user may or may not call `next` but no `break`.
-        if (scrubwren::get_scrubwren_state()$for_loop_control == "null") {
-          assign("for_loop_control", "user break", envir = scrubwren::get_scrubwren_state())
-        } else {
-          assign("for_loop_control", "no break", envir = scrubwren::get_scrubwren_state())
-          break 
+        # Track for loop control
+        assign("loop_control_break", "null", envir = scrubwren::get_scrubwren_state())
+        
+        while (TRUE) {
+          
+          # "user break" means the body has not been evaluated, 
+          # if this is the final state, it means the user `break` from the loop body.
+          # "no break" means the body has been evaluated,
+          # if this is the final state, it means the user may or may not call `next` but no `break`.
+          if (scrubwren::get_scrubwren_state()$loop_control_break == "null") {
+            assign("loop_control_break", "user break", envir = scrubwren::get_scrubwren_state())
+          } else {
+            assign("loop_control_break", "no break", envir = scrubwren::get_scrubwren_state())
+            break 
+          }
+          
+          .(substitute(body))
         }
-
-        .(substitute(body))
-      }
-    }) 
+      }) 
+    } else {
+      body_expr <- substitute(body)
+    }
       
     eval(body_expr, envir = env)
     
-    if (.scrubwren_state$for_loop_control == "user break") break
+    if (enable_loop_control && .scrubwren_state$loop_control_break == "user break") break
   }
 }
 
