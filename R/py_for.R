@@ -86,20 +86,49 @@ py_is_iterator <- function(obj) {
 #' - If `iterable` implements only `__iter__` but not `__next__`, it is
 #'   automatically converted into an iterator.  
 #' - Loop variables support tuple unpacking via [py_tuple_unpack()].  
-#' - The loop tracks whether the user calls `break` or `next` inside the loop:
+#' - If `enable_loop_control = TRUE`, the loop tracks whether the user 
+#'   calls `break` or `next` inside the loop:
 #'   * `break` exits the loop early, skipping any remaining iterations.
 #'   * `next` skips to the next iteration without stopping the loop entirely.
 #'   * If neither is called, the loop proceeds normally.  
+#' 
+#' ## Performance warnings
+#' Looping over Python objects in R can be **inefficient**. In each iteration, 
+#' `reticulate` must pass handles between R and Python, often performing 
+#' implicit or explicit object conversions and copies.  
+#' If the `body` of your loop is lightweight and you need to iterate over a 
+#' large Python object, consider defining a Python function via 
+#' [reticulate::py_run_string()] or [py_builtins]`$exec()` and calling it directly.  
+#' You can also use `r.var` (where `var` is any R variable name) to access or 
+#' assign R objects directly from Python, which may help avoid unnecessary data transfer.  
+#' Native Python tools are **significantly faster** in such cases!
+#' 
+#' For example, instead of doing:
+#' ```r
+#' y <- py_builtins$int(0L)
+#' py_for(x ~ reticulate::r_to_py(1:10000), y <- y + x^2)
+#' ```
+#' it is better to do:
+#' ```r
+#' function_def <- "
+#' def cumsum_square(n):
+#'     return sum([x ** 2 for x in range(1, n + 1)])
+#' "
+#' my_func <- reticulate::py_run_string(function_def, local = TRUE, convert = FALSE)
+#' y <- my_func$cumsum_square(100000L)
+#' ```
+#' 
+#' Note that we need to set `local = TRUE`, so that the returned dictionary
+#' is not within the main module. The main module created by `reticulate` 
+#' automatically converts Python objects to R objects, unless we disable this 
+#' behavior for the entire module. Doing so, however, could interfere
+#' with `reticulate`'s internals. Defining the function in a private dictionary
+#' with `convert = FALSE` allows us to keep objects as native Python types, 
+#' which is important when working with large integers that could otherwise 
+#' overflow when converted back to R.
 #'
 #' @examples
 #' \dontrun{
-#' 
-#' # Basic loop over a Python list with loop control
-#' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
-#'   if (reticulate::py_to_r(x) == 2) next  # skip printing 2
-#'   if (reticulate::py_to_r(x) == 3) break # exit before printing 3
-#'   print(x)
-#' })
 #' 
 #' # Loop over a Python list
 #' py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
@@ -214,22 +243,74 @@ py_for <- function(loop_spec, body, env = parent.frame(), enable_loop_control = 
 #' Python-Style Comprehension in R
 #'
 #' Evaluate Python-like comprehensions in R. Supports multiple nested loops
-#' with optional conditions and returns results in a specified Python 
-#' collection type (`list`, `tuple`, `set`, or `dict`),
-#' or as a regular R list.
+#' with optional conditions, returning results in a chosen Python collection 
+#' type (`list`, `tuple`, `set`, or `dict`) or as a regular R list. 
+#' Conceptually, it works like [lapply()] for Python objects, but 
+#' this function offers additional return types and more flexible 
+#' control over iteration.
 #' 
-#' When `format = py_builtins$dict()`, each evaluation of `body` must 
-#' return a **key-value pair**. Valid pair formats include:
+#' @details
+#' 
+#' ## Dictionary return type
+#' When `format = `[py_builtins]`$dict()`, each evaluation of `body` must 
+#' be a **key-value pair**. Valid pair formats include:
 #' * A Python tuple of length 2
 #' * A Python list of length 2
 #' * A regular R list of length 2  
 #' 
 #' The first element is used as the key and the second as the value.  
-#' This allows creating dictionaries in Python style directly from R comprehensions.
+#' This allows creating dictionaries in Python style directly from R 
+#' comprehensions.
+#' 
+#' ## Side effects
+#' Like [lapply()], this function evaluates `body` in a local scope, so 
+#' assignments normally do not affect the caller environment. To produce side 
+#' effects, use [<<-], [assign()] with a suitable environment, or modify an 
+#' environment variable directly (see [environment()]).
+#' 
+#' ## Performance warnings
+#' Looping over Python objects in R can be **inefficient**. In each iteration, 
+#' `reticulate` must pass handles between R and Python, often performing 
+#' implicit or explicit object conversions and copies.  
+#' If the `body` of your loop is lightweight and you need to iterate over a 
+#' large Python object, consider defining a Python function via 
+#' [reticulate::py_run_string()] or [py_builtins]`$exec()` and calling it directly.  
+#' You can also use `r.var` (where `var` is any R variable name) to access or 
+#' assign R objects directly from Python, which may help avoid unnecessary data transfer.  
+#' Native Python tools are **significantly faster** in such cases!
+#' 
+#' For example, instead of doing:
+#' ```r
+#' y <- py_comprehension(x ~ reticulate::r_to_py(1:100000), x^2)
+#' ```
+#' it is better to do:
+#' ```r
+#' function_def <- "
+#' def list_square(n):
+#'     return [x ** 2 for x in range(1, n + 1)]
+#' "
+#' my_func <- reticulate::py_run_string(function_def, local = TRUE, convert = FALSE)
+#' y <- my_func$list_square(100000L)
+#' ```
+#' 
+#' Note that we need to set `local = TRUE`, so that the returned dictionary
+#' is not within the main module. The main module created by `reticulate` 
+#' automatically converts Python objects to R objects, unless we disable this 
+#' behavior for the entire module. Doing so, however, could interfere
+#' with `reticulate`'s internals. Defining the function in a private dictionary
+#' with `convert = FALSE` allows us to keep objects as native Python types, 
+#' which is important when working with large integers that could otherwise 
+#' overflow when converted back to R.
 #'
-#' @param loop_spec_list Formula/List. A single formula or a vector of formulas specifying the loops. 
-#'   Each formula must be of the form `var ~ iterable` or `var ~ iterable | condition`, where `var` is 
-#'   the loop variable and `iterable` is a Python iterable object.
+#' @param loop_spec_list Formula/List. A single formula or a 
+#' list of formulas specifying the loops. Each formula must have the form 
+#' `var ~ iterable` or `var ~ iterable | condition`, where `var` is the 
+#' loop variable and `iterable` is a Python iterable.  
+#' When multiple formulas are provided, each additional formula defines a 
+#' deeper loop, with the last formula representing the innermost loop.  
+#' The `condition` will be wrapped using [py_builtins]`$bool()`, so it can be 
+#' either an R boolean or a Python value compatible with Python’s 
+#' [truth-testing procedure](https://docs.python.org/3/library/stdtypes.html#truth).
 #' @param body Expression. An R expression to evaluate inside the innermost loop. 
 #' Its result is collected into the comprehension output.
 #' @param env Environment. The parent environment for evaluation; defaults to 
@@ -238,20 +319,19 @@ py_for <- function(loop_spec, body, env = parent.frame(), enable_loop_control = 
 #' variables created or modified inside `body` do not affect the outer 
 #' environment unless global modification is explicitly used.
 #' @param format A Python collection type or a regular R list to store the results. 
-#'   Defaults to a Python list (`py_builtins$list()`).
+#'   Defaults to a Python list ([py_builtins]`$list()`).
 #'
 #' @return A Python collection or R list containing the results of the comprehension.
 #'
 #' @examples
 #' \dontrun{
-#' # Simple Python-style comprehension (squares)
+#' # Simple Python-style comprehension
 #' py_comprehension(
 #'   i ~ reticulate::r_to_py(1:3),
 #'   i^2
 #' )
-#' # Returns a Python list: [1, 4, 9]
 #'
-#' # Nested loops with conditions using Python lists
+#' # Nested loops with conditions
 #' test <- reticulate::r_to_py(list(list(1, 2, 3), list(1, 2), list(1)))
 #' py_comprehension(
 #'   c(
@@ -301,13 +381,14 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
     loop_spec_list <- list(loop_spec_list)
   }
   
-  # Setup comprehension helpers
-  comprehension_init()
+  # Setup comprehension container
+  comprehension_init(format)
   .scrubwren_state$comprehension_add <- comprehension_add
   
   # The final expression is a nested `py_for()` loop
   accumulated_body <- substitute({scrubwren::get_scrubwren_state()$comprehension_add(body)})
   
+  # Innermost loop needs to be added to the `accumulated_body` first
   for (loop_spec in rev(loop_spec_list)) {
     if (!is.call(loop_spec) || loop_spec[[1]] != as.symbol("~"))
       cli::cli_abort("The loop specification needs to be a formula!")
@@ -316,6 +397,7 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
     iter_sym <- loop_spec[[3]]
     iter_condition <- TRUE
     
+    # Extract the iteration condition
     if (is.call(iter_sym) && iter_sym[[1]] == as.symbol("|")) {
       iter_condition <- iter_sym[[3]]
       iter_sym <- iter_sym[[2]]
@@ -324,39 +406,103 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
     new_loop_spec <- call("~", var_sym, iter_sym)
     
     accumulated_body <- bquote(py_for(.(new_loop_spec), {
+      
+      # Accept both R boolean and Python object as the iteration condition
       if (reticulate::py_to_r(py_builtins$bool(.(iter_condition)))) .(accumulated_body)  
-    }))
+    }, enable_loop_control = FALSE))
   }
   
+  # Record the accumulated for debug purpose
   .scrubwren_state$comprehension_accumulated_body <- accumulated_body
   
   # Evaluate the nested for loop in a new environment to avoid unnecessary side-effect
   eval(accumulated_body, envir = new.env(parent = env))
   
   # Finalize the result
-  comprehension_finalize(format)
+  comprehension_finalize()
   
   return(.scrubwren_state$comprehension_result)
 }
 
-comprehension_init <- function() {
-  .scrubwren_state$comprehension_result <- list()
+comprehension_init <- function(format) {
+  
+  # Use the most efficient and convenient container
+  if (reticulate::is_py_object(format)) {
+    if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$list))) {
+      .scrubwren_state$comprehension_format <- "py_list"
+      .scrubwren_state$comprehension_result <- py_builtins$list()
+    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$tuple))) {
+      .scrubwren_state$comprehension_format <- "py_tuple"
+      .scrubwren_state$comprehension_result <- py_builtins$list()
+    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$set))) {
+      .scrubwren_state$comprehension_format <- "py_set"
+      .scrubwren_state$comprehension_result <- py_builtins$set()
+    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$dict))) {
+      .scrubwren_state$comprehension_format <- "py_dict"
+      .scrubwren_state$comprehension_result <- py_builtins$dict()
+    }
+  } else if (is.list(format)) {
+    
+    # Pre-allocate space to avoid frequent memory allocation 
+    .scrubwren_state$comprehension_format <- "r_list"
+    .scrubwren_state$comprehension_result <- vector("list", 1000L)
+    .scrubwren_state$comprehension_result_len <- 0L
+    .scrubwren_state$comprehension_result_capacity <- 1000L
+  } else {
+    cli::cli_abort("Argument`format` must be a Python list, tuple, set, dict, or an R list!")
+  }
 }
 
 comprehension_add <- function(x) {
-  .scrubwren_state$comprehension_result[[length(.scrubwren_state$comprehension_result) + 1]] <- x
+  
+  format <- .scrubwren_state$comprehension_format
+  
+  if (format == "r_list") {
+    
+    capacity <- .scrubwren_state$comprehension_result_capacity 
+    .scrubwren_state$comprehension_result_len <- .scrubwren_state$comprehension_result_len + 1L
+    
+    # Check the container capacity
+    if (capacity < .scrubwren_state$comprehension_result_len) {
+      
+      # Exponential growth at the beginning, then switch to linear growth
+      if (capacity < 1e5) {
+        capacity <- capacity * 2L
+      } else {
+        capacity <- capacity + 1e5L
+      }
+      
+      # Set and record new capacity, NULL will be padded
+      length(.scrubwren_state$comprehension_result) <- capacity
+      .scrubwren_state$comprehension_result_capacity <- capacity
+    }
+    
+    # Record the object
+    .scrubwren_state$comprehension_result[[.scrubwren_state$comprehension_result_len]] <- x
+    
+  } else if (format %in% c("py_list", "py_tuple")) {
+    .scrubwren_state$comprehension_result$append(x)
+  } else if (format == "py_set") {
+    .scrubwren_state$comprehension_result$add(x)
+  } else if (format == "py_dict") {
+    
+    # Handle R object and Python object differently
+    # So user can provide R list or Python tuple/list as 
+    if (reticulate::is_py_object(x)) {
+      .scrubwren_state$comprehension_result[x[0]] <- x[1]
+    } else {
+      .scrubwren_state$comprehension_result[x[[1]]] <- x[[2]]
+    }
+  }
 }
 
-comprehension_finalize <- function(format = list()) {
-  if (reticulate::is_py_object(format)) {
-    if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$list))) {
-      .scrubwren_state$comprehension_result <- py_builtins$list(.scrubwren_state$comprehension_result)
-    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$tuple))) {
+comprehension_finalize <- function() {
+  format <- .scrubwren_state$comprehension_format
+  if (format == "r_list") {
+    length(.scrubwren_state$comprehension_result) <- .scrubwren_state$comprehension_result_len
+  } else {
+    if (format == "py_tuple") {
       .scrubwren_state$comprehension_result <- py_builtins$tuple(.scrubwren_state$comprehension_result)
-    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$set))) {
-      .scrubwren_state$comprehension_result <- py_builtins$set(.scrubwren_state$comprehension_result)
-    } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$dict))) {
-      .scrubwren_state$comprehension_result <- py_builtins$dict(.scrubwren_state$comprehension_result)
     }
   }
 }
