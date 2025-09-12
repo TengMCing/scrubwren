@@ -52,8 +52,8 @@ py_tuple_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TR
   }
   
   if (!is.call(vars) || vars[[1]] != as.symbol("c")) {
-    .scrubwren_state$last_tuple_unpack_value <- value
-    expr <- call("<-", vars, quote(get_scrubwren_state()$last_tuple_unpack_value))
+    .state$last_tuple_unpack_value <- value
+    expr <- call("<-", vars, quote(get_state()$last_tuple_unpack_value))
     eval(expr, envir = envir)
     return(invisible(NULL))
   }

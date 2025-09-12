@@ -101,9 +101,9 @@ is not within the main module. The main module created by \code{reticulate}
 automatically converts Python objects to R objects, unless we disable this
 behavior for the entire module. Doing so, however, could interfere
 with \code{reticulate}'s internals. Defining the function in a private dictionary
-allows us to keep objects as native Python types, which is important when
-working with large integers that could otherwise overflow when converted
-back to R.
+with \code{convert = FALSE} allows us to keep objects as native Python types,
+which is important when working with large integers that could otherwise
+overflow when converted back to R.
 }
 }
 \examples{
@@ -125,6 +125,11 @@ py_comprehension(
     a <- z + 1
     a
   }
+)
+
+# Nested comprehension
+py_comprehension(i ~ reticulate::r_to_py(1:5),
+  py_comprehension(j ~ reticulate::r_to_py(1:5) | j > i, j)
 )
 
 # Return results as a regular R list

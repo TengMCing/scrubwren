@@ -4,7 +4,7 @@
 \alias{py_for}
 \title{Python-style \code{for} loops in R}
 \usage{
-py_for(loop_spec, body, env = parent.frame(), enable_loop_control = TRUE)
+py_for(loop_spec, body, env = parent.frame())
 }
 \arguments{
 \item{loop_spec}{A two-sided formula of the form \code{vars ~ iterable}, where
@@ -15,14 +15,6 @@ py_for(loop_spec, body, env = parent.frame(), enable_loop_control = TRUE)
 
 \item{env}{The environment in which to run the loop and evaluate the body.
 Defaults to the calling environment.}
-
-\item{enable_loop_control}{Boolean. if \code{TRUE}, the loop monitors user calls
-to \code{break} or \code{next} at the top level of the \code{py_for()} body. These statements
-then control the loop as expected. If \code{FALSE}, any \code{break} or \code{next}
-at the top level of the body will trigger an error.
-Note that \code{break} and \code{next} inside nested loops within the body are not
-governed by this setting; their behavior depends on the configuration of
-the nested loops themselves.}
 }
 \value{
 Invisibly returns \code{NULL}. Called for side effects.
@@ -37,7 +29,7 @@ iterator. This provides a convenient syntax for looping with destructuring
 \item If \code{iterable} implements only \verb{__iter__} but not \verb{__next__}, it is
 automatically converted into an iterator.
 \item Loop variables support tuple unpacking via \code{\link[=py_tuple_unpack]{py_tuple_unpack()}}.
-\item If \code{enable_loop_control = TRUE}, the loop tracks whether the user
+\item The loop tracks whether the user
 calls \code{break} or \code{next} inside the loop:
 \itemize{
 \item \code{break} exits the loop early, skipping any remaining iterations.
@@ -111,31 +103,14 @@ py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
   print(x)
 })
 
-# Loop with loop control disabled
-py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
-
-  # Local loop `break` is allowed
-  for (i in 1:10) break  
-  
-  # Local `py_for` loop `break` is allowed
-  py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), break)
-  
-  # Using break or next here will trigger an error
-  next 
-  print(x)
-}, enable_loop_control = FALSE)
-
-# Loop with inner loop control disabled
-py_for(x ~ reticulate::r_to_py(list(1, 2, 3)), {
-
-  # Nested `py_for` with loop control disabled
-  # Using `break` here will trigger an error
-  py_for(i ~ reticulate::r_to_py(list(1, 2, 3)), 
-         break, 
-         enable_loop_control = FALSE)
-         
-  print(x)
+# Nested loop
+py_for(x ~ reticulate::r_to_py(list(list(1, 2, 3), list(4, 5, 6))), {
+  py_for(y ~ x, {
+    print(y)
+  })
+  print("inner list finished")
 })
+
 
 }
 

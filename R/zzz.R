@@ -1,8 +1,8 @@
 
-# .scrubwren_state --------------------------------------------------------
+# .state ------------------------------------------------------------------
 
-.scrubwren_state <- new.env()
-.scrubwren_state$py_builtins <- NULL
+.state <- new.env()
+.state$py_builtins <- NULL
 
 #' Access the internal `scrubwren` state
 #'
@@ -13,21 +13,21 @@
 #' @return An environment containing internal package state.
 #'
 #' @details
-#' This function exposes the `.scrubwren_state` environment.  
+#' This function exposes the `.state` environment.  
 #' It is primarily intended for debugging or advanced use, and the
 #' structure of the state object is not guaranteed to remain stable
 #' across package versions.
 #'
 #' @examples
 #' \dontrun{
-#' st <- get_scrubwren_state()
+#' st <- get_state()
 #' ls(st)             # List objects in the internal state
 #' st$last_tuple_unpack_value  # Access the last unpacked tuple value
 #' }
 #'
 #' @export
-get_scrubwren_state <- function() {
-  return(.scrubwren_state)
+get_state <- function() {
+  return(.state)
 }
 
 
@@ -37,15 +37,15 @@ py_builtins_bindings <- function(x) {
 
   # Delay the import of builtins to give user the opportunity to 
   # declare which python interpreter to use.
-  if (is.null(.scrubwren_state$py_builtins)) {
+  if (is.null(.state$py_builtins)) {
     
     msg_option <- getOption("scrubwren.show_py_builtins_message", default = TRUE)
     
-    .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE, delay_load = TRUE) 
+    .state$py_builtins <- reticulate::import_builtins(convert = FALSE, delay_load = TRUE) 
     
     # if (reticulate::py_available()) {
     #   if (msg_option && interactive()) cli::cli_alert_info("Importing `py_builtins` from {.field Python {reticulate::py_config()$version}} at {.file {reticulate::py_config()$python}}.")
-    #   .scrubwren_state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
+    #   .state$py_builtins <- reticulate::import_builtins(convert = FALSE) 
     # } else {
     #   if (msg_option && interactive()) cli::cli_alert_danger("Cannot import `py_builtins` because Python is not ready! You can force initialization of Python with `reticulate::py_config().`")
     # }
@@ -53,7 +53,7 @@ py_builtins_bindings <- function(x) {
     
   # The binding is locked, so we can not assign value to it.
   
-  return(.scrubwren_state$py_builtins)
+  return(.state$py_builtins)
 }
 
 

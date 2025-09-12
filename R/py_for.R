@@ -148,6 +148,14 @@ py_is_iterator <- function(obj) {
 #'   print(x)
 #' })
 #' 
+#' # Nested loop
+#' py_for(x ~ reticulate::r_to_py(list(list(1, 2, 3), list(4, 5, 6))), {
+#'   py_for(y ~ x, {
+#'     print(y)
+#'   })
+#'   print("inner list finished")
+#' })
+#' 
 #' 
 #' }
 #'
@@ -163,11 +171,11 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
     
     while(TRUE) {
 
-      if (!scrubwren::get_scrubwren_state()$for_next_item()) {
+      if (!scrubwren::get_state()$for_next_item()) {
         break
       }
       
-      scrubwren::get_scrubwren_state()$for_unpack(var_sym)
+      scrubwren::get_state()$for_unpack(var_sym)
 
       body
     }
@@ -176,18 +184,18 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
   body_expr[[2]][[3]][[3]][[2]] <- var_sym
   body_expr[[2]][[3]][[4]] <- substitute(body)
   
-  .scrubwren_state$for_body <- body_expr
-  .scrubwren_state$for_next_item <- for_next_item
-  .scrubwren_state$for_unpack <- for_unpack
+  .state$for_body <- body_expr
+  .state$for_next_item <- for_next_item
+  .state$for_unpack <- for_unpack
 
   # Use a loop number to track inner loop
-  if (is.null(.scrubwren_state$loop_number)) .scrubwren_state$loop_number <- 0L
+  if (is.null(.state$loop_number)) .state$loop_number <- 0L
   
   # Build a stack
-  if (is.null(.scrubwren_state$loop_iter)) .scrubwren_state$loop_iter <- list()
-  if (is.null(.scrubwren_state$loop_item)) .scrubwren_state$loop_item <- list()
-  if (is.null(.scrubwren_state$loop_env)) .scrubwren_state$loop_env <- list()
-  .scrubwren_state$loop_number <- .scrubwren_state$loop_number + 1L
+  if (is.null(.state$loop_iter)) .state$loop_iter <- list()
+  if (is.null(.state$loop_item)) .state$loop_item <- list()
+  if (is.null(.state$loop_env)) .state$loop_env <- list()
+  .state$loop_number <- .state$loop_number + 1L
   
   # Get the iterator
   iter <- eval(iter_sym, envir = env)
@@ -196,21 +204,21 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
   # we need to convert it to a iterator.
   # Record the iterator
   if (!py_is_iterator(iter)) {
-    .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- reticulate::as_iterator(iter)  
+    .state$loop_iter[[.state$loop_number]] <- reticulate::as_iterator(iter)  
   } else {
-    .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- iter
+    .state$loop_iter[[.state$loop_number]] <- iter
   }
   
   # Record the iterator environment
-  .scrubwren_state$loop_env[[.scrubwren_state$loop_number]] <- env
+  .state$loop_env[[.state$loop_number]] <- env
   
   eval(body_expr, envir = env)
   
   # Clean up the stack
-  .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- NULL
-  .scrubwren_state$loop_item[[.scrubwren_state$loop_number]] <- NULL
-  .scrubwren_state$loop_env[[.scrubwren_state$loop_number]] <- NULL
-  .scrubwren_state$loop_number <- .scrubwren_state$loop_number - 1L  
+  .state$loop_iter[[.state$loop_number]] <- NULL
+  .state$loop_item[[.state$loop_number]] <- NULL
+  .state$loop_env[[.state$loop_number]] <- NULL
+  .state$loop_number <- .state$loop_number - 1L  
   
   
   return(invisible(NULL))
@@ -219,12 +227,12 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
 # Get next item and return if the loop should continue
 for_next_item <- function() {
   
-  loop_number <- .scrubwren_state$loop_number
+  loop_number <- .state$loop_number
   
-  .scrubwren_state$loop_item[[loop_number]] <- reticulate::iter_next(.scrubwren_state$loop_iter[[loop_number]], 
-                                                                     completed = quote(StopIteration))
+  .state$loop_item[[loop_number]] <- reticulate::iter_next(.state$loop_iter[[loop_number]], 
+                                                           completed = quote(StopIteration))
   
-  if (identical(.scrubwren_state$loop_item[[loop_number]], quote(StopIteration))) {
+  if (identical(.state$loop_item[[loop_number]], quote(StopIteration))) {
     return(FALSE)
   } else {
     return(TRUE)
@@ -233,10 +241,10 @@ for_next_item <- function() {
 
 # Unpack for loop variables
 for_unpack <- function(var_sym) {
-  loop_number <- .scrubwren_state$loop_number
+  loop_number <- .state$loop_number
   py_tuple_unpack(substitute(var_sym), 
-                  .scrubwren_state$loop_item[[loop_number]], 
-                  envir = .scrubwren_state$loop_env[[loop_number]],
+                  .state$loop_item[[loop_number]], 
+                  envir = .state$loop_env[[loop_number]],
                   quote_vars = FALSE)
 }
 
@@ -346,6 +354,11 @@ for_unpack <- function(var_sym) {
 #'     a
 #'   }
 #' )
+#' 
+#' # Nested comprehension
+#' py_comprehension(i ~ reticulate::r_to_py(1:5),
+#'   py_comprehension(j ~ reticulate::r_to_py(1:5) | j >= i, j)
+#' )
 #'
 #' # Return results as a regular R list
 #' py_comprehension(
@@ -385,16 +398,16 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   }
   
   # Build a stack
-  if (is.null(.scrubwren_state$comprehension_number)) .scrubwren_state$comprehension_number <- 0L
-  .scrubwren_state$comprehension_number <- .scrubwren_state$comprehension_number + 1L
+  if (is.null(.state$comprehension_number)) .state$comprehension_number <- 0L
+  .state$comprehension_number <- .state$comprehension_number + 1L
   
   # Setup comprehension container
   comprehension_init(format)
   
-  .scrubwren_state$comprehension_add <- comprehension_add
+  .state$comprehension_add <- comprehension_add
   
   # The final expression is a nested `py_for()` loop
-  accumulated_body <- substitute({scrubwren::get_scrubwren_state()$comprehension_add(body)})
+  accumulated_body <- substitute({scrubwren::get_state()$comprehension_add(body)})
   
   # Innermost loop needs to be added to the `accumulated_body` first
   for (loop_spec in rev(loop_spec_list)) {
@@ -423,7 +436,7 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   accumulated_body <- substitute(local(accumulated_body))
   
   # Record the accumulated for debug purpose
-  .scrubwren_state$comprehension_accumulated_body <- accumulated_body
+  .state$comprehension_accumulated_body <- accumulated_body
   
   # Evaluate the nested for loop in a new environment to avoid unnecessary side-effect
   eval(accumulated_body, envir = env)
@@ -432,43 +445,43 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   result <- comprehension_finalize()
   
   # Clean up the stack
-  .scrubwren_state$comprehension_number <- .scrubwren_state$comprehension_number - 1L
+  .state$comprehension_number <- .state$comprehension_number - 1L
   
   return(result)
 }
 
 comprehension_init <- function(format) {
   
-  number <- .scrubwren_state$comprehension_number
+  number <- .state$comprehension_number
   if (number == 1) {
-    .scrubwren_state$comprehension_format <- list()
-    .scrubwren_state$comprehension_result <- list()
-    .scrubwren_state$comprehension_result_len <- list()
-    .scrubwren_state$comprehension_result_capacity <- list()
+    .state$comprehension_format <- list()
+    .state$comprehension_result <- list()
+    .state$comprehension_result_len <- list()
+    .state$comprehension_result_capacity <- list()
   }
   
   # Use the most efficient and convenient container
   if (reticulate::is_py_object(format)) {
     if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$list))) {
-      .scrubwren_state$comprehension_format[[number]] <- "py_list"
-      .scrubwren_state$comprehension_result[[number]] <- py_builtins$list()
+      .state$comprehension_format[[number]] <- "py_list"
+      .state$comprehension_result[[number]] <- py_builtins$list()
     } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$tuple))) {
-      .scrubwren_state$comprehension_format[[number]] <- "py_tuple"
-      .scrubwren_state$comprehension_result[[number]] <- py_builtins$list()
+      .state$comprehension_format[[number]] <- "py_tuple"
+      .state$comprehension_result[[number]] <- py_builtins$list()
     } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$set))) {
-      .scrubwren_state$comprehension_format[[number]] <- "py_set"
-      .scrubwren_state$comprehension_result[[number]] <- py_builtins$set()
+      .state$comprehension_format[[number]] <- "py_set"
+      .state$comprehension_result[[number]] <- py_builtins$set()
     } else if (reticulate::py_to_r(py_builtins$isinstance(format, py_builtins$dict))) {
-      .scrubwren_state$comprehension_format[[number]] <- "py_dict"
-      .scrubwren_state$comprehension_result[[number]] <- py_builtins$dict()
+      .state$comprehension_format[[number]] <- "py_dict"
+      .state$comprehension_result[[number]] <- py_builtins$dict()
     }
   } else if (is.list(format)) {
     
     # Pre-allocate space to avoid frequent memory allocation 
-    .scrubwren_state$comprehension_format[[number]] <- "r_list"
-    .scrubwren_state$comprehension_result[[number]] <- vector("list", 1000L)
-    .scrubwren_state$comprehension_result_len[[number]] <- 0L
-    .scrubwren_state$comprehension_result_capacity[[number]] <- 1000L
+    .state$comprehension_format[[number]] <- "r_list"
+    .state$comprehension_result[[number]] <- vector("list", 1000L)
+    .state$comprehension_result_len[[number]] <- 0L
+    .state$comprehension_result_capacity[[number]] <- 1000L
   } else {
     cli::cli_abort("Argument`format` must be a Python list, tuple, set, dict, or an R list!")
   }
@@ -476,16 +489,16 @@ comprehension_init <- function(format) {
 
 comprehension_add <- function(x) {
   
-  number <- .scrubwren_state$comprehension_number
-  format <- .scrubwren_state$comprehension_format[[number]]
+  number <- .state$comprehension_number
+  format <- .state$comprehension_format[[number]]
   
   if (format == "r_list") {
     
-    capacity <- .scrubwren_state$comprehension_result_capacity[[number]] 
-    .scrubwren_state$comprehension_result_len[[number]] <- .scrubwren_state$comprehension_result_len[[number]] + 1L
+    capacity <- .state$comprehension_result_capacity[[number]] 
+    .state$comprehension_result_len[[number]] <- .state$comprehension_result_len[[number]] + 1L
     
     # Check the container capacity
-    if (capacity < .scrubwren_state$comprehension_result_len[[number]]) {
+    if (capacity < .state$comprehension_result_len[[number]]) {
       
       # Exponential growth at the beginning, then switch to linear growth
       if (capacity < 1e5) {
@@ -495,48 +508,48 @@ comprehension_add <- function(x) {
       }
       
       # Set and record new capacity, NULL will be padded
-      length(.scrubwren_state$comprehension_result[[number]]) <- capacity
-      .scrubwren_state$comprehension_result_capacity[[number]] <- capacity
+      length(.state$comprehension_result[[number]]) <- capacity
+      .state$comprehension_result_capacity[[number]] <- capacity
     }
     
     # Record the object
-    .scrubwren_state$comprehension_result[[.scrubwren_state$comprehension_result_len[[number]]]][[number]] <- x
+    .state$comprehension_result[[.state$comprehension_result_len[[number]]]][[number]] <- x
     
   } else if (format %in% c("py_list", "py_tuple")) {
-    .scrubwren_state$comprehension_result[[number]]$append(x)
+    .state$comprehension_result[[number]]$append(x)
   } else if (format == "py_set") {
-    .scrubwren_state$comprehension_result[[number]]$add(x)
+    .state$comprehension_result[[number]]$add(x)
   } else if (format == "py_dict") {
     
     # Handle R object and Python object differently
     # So user can provide R list or Python tuple/list
     if (reticulate::is_py_object(x)) {
-      .scrubwren_state$comprehension_result[[number]][x[0]] <- x[1]
+      .state$comprehension_result[[number]][x[0]] <- x[1]
     } else {
-      .scrubwren_state$comprehension_result[[number]][x[[1]]] <- x[[2]]
+      .state$comprehension_result[[number]][x[[1]]] <- x[[2]]
     }
   }
 }
 
 comprehension_finalize <- function() {
   
-  number <- .scrubwren_state$comprehension_number
-  format <- .scrubwren_state$comprehension_format[[number]]
+  number <- .state$comprehension_number
+  format <- .state$comprehension_format[[number]]
   
   if (format == "r_list") {
-    length(.scrubwren_state$comprehension_result[[number]]) <- .scrubwren_state$comprehension_result_len[[number]]
+    length(.state$comprehension_result[[number]]) <- .state$comprehension_result_len[[number]]
   } else {
     if (format == "py_tuple") {
-      .scrubwren_state$comprehension_result[[number]] <- py_builtins$tuple(.scrubwren_state$comprehension_result[[number]])
+      .state$comprehension_result[[number]] <- py_builtins$tuple(.state$comprehension_result[[number]])
     }
   }
   
-  result <- .scrubwren_state$comprehension_result[[number]]
+  result <- .state$comprehension_result[[number]]
   
-  .scrubwren_state$comprehension_format[[number]] <- NULL
-  .scrubwren_state$comprehension_result[[number]] <- NULL
-  .scrubwren_state$comprehension_result_len[[number]] <- NULL
-  .scrubwren_state$comprehension_result_capacity[[number]] <- NULL
+  .state$comprehension_format[[number]] <- NULL
+  .state$comprehension_result[[number]] <- NULL
+  .state$comprehension_result_len[[number]] <- NULL
+  .state$comprehension_result_capacity[[number]] <- NULL
   
   return(result)
 }
