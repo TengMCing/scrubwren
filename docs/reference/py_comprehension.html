@@ -151,9 +151,9 @@ is not within the main module. The main module created by <code>reticulate</code
 automatically converts Python objects to R objects, unless we disable this
 behavior for the entire module. Doing so, however, could interfere
 with <code>reticulate</code>'s internals. Defining the function in a private dictionary
-allows us to keep objects as native Python types, which is important when
-working with large integers that could otherwise overflow when converted
-back to R.</p>
+with <code>convert = FALSE</code> allows us to keep objects as native Python types,
+which is important when working with large integers that could otherwise
+overflow when converted back to R.</p>
 </div>
 
     </div>
@@ -178,6 +178,11 @@ back to R.</p>
 <span class="r-in"><span>    <span class="va">a</span> <span class="op">&lt;-</span> <span class="va">z</span> <span class="op">+</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span>    <span class="va">a</span></span></span>
 <span class="r-in"><span>  <span class="op">}</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Nested comprehension</span></span></span>
+<span class="r-in"><span><span class="fu">py_comprehension</span><span class="op">(</span><span class="va">i</span> <span class="op">~</span> <span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">r_to_py</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">py_comprehension</span><span class="op">(</span><span class="va">j</span> <span class="op">~</span> <span class="fu">reticulate</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/reticulate/reference/r-py-conversion.html" class="external-link">r_to_py</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span> <span class="op">|</span> <span class="va">j</span> <span class="op">&gt;=</span> <span class="va">i</span>, <span class="va">j</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Return results as a regular R list</span></span></span>

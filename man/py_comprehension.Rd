@@ -129,7 +129,7 @@ py_comprehension(
 
 # Nested comprehension
 py_comprehension(i ~ reticulate::r_to_py(1:5),
-  py_comprehension(j ~ reticulate::r_to_py(1:5) | j > i, j)
+  py_comprehension(j ~ reticulate::r_to_py(1:5) | j >= i, j)
 )
 
 # Return results as a regular R list
