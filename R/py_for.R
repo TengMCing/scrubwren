@@ -158,49 +158,87 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
   
   var_sym <- loop_spec[[2]]
   iter_sym <- loop_spec[[3]]
+    
+  body_expr <- quote({
+    
+    while(TRUE) {
+
+      if (!scrubwren::get_scrubwren_state()$for_next_item()) {
+        break
+      }
+      
+      scrubwren::get_scrubwren_state()$for_unpack(var_sym)
+
+      body
+    }
+  })
   
+  body_expr[[2]][[3]][[3]][[2]] <- var_sym
+  body_expr[[2]][[3]][[4]] <- substitute(body)
+  
+  .scrubwren_state$for_body <- body_expr
+  .scrubwren_state$for_next_item <- for_next_item
+  .scrubwren_state$for_unpack <- for_unpack
+
+  # Use a loop number to track inner loop
+  if (is.null(.scrubwren_state$loop_number)) .scrubwren_state$loop_number <- 0L
+  
+  # Build a stack
+  if (is.null(.scrubwren_state$loop_iter)) .scrubwren_state$loop_iter <- list()
+  if (is.null(.scrubwren_state$loop_item)) .scrubwren_state$loop_item <- list()
+  if (is.null(.scrubwren_state$loop_env)) .scrubwren_state$loop_env <- list()
+  .scrubwren_state$loop_number <- .scrubwren_state$loop_number + 1L
+  
+  # Get the iterator
   iter <- eval(iter_sym, envir = env)
   
   # If `iter` only implements the __iter__ method but not the __next__ method,
   # we need to convert it to a iterator.
+  # Record the iterator
   if (!py_is_iterator(iter)) {
-    iter <- reticulate::as_iterator(iter)  
+    .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- reticulate::as_iterator(iter)  
+  } else {
+    .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- iter
   }
   
-  while (TRUE) {
-    item <- reticulate::iter_next(iter, completed = quote(StopIteration))
-    if (identical(item, quote(StopIteration))) break
-    py_tuple_unpack(var_sym, item, envir = env, quote_vars = FALSE)
-    
+  # Record the iterator environment
+  .scrubwren_state$loop_env[[.scrubwren_state$loop_number]] <- env
+  
+  eval(body_expr, envir = env)
+  
+  # Clean up the stack
+  .scrubwren_state$loop_iter[[.scrubwren_state$loop_number]] <- NULL
+  .scrubwren_state$loop_item[[.scrubwren_state$loop_number]] <- NULL
+  .scrubwren_state$loop_env[[.scrubwren_state$loop_number]] <- NULL
+  .scrubwren_state$loop_number <- .scrubwren_state$loop_number - 1L  
+  
+  
+  return(invisible(NULL))
+}
 
-    body_expr <- bquote({
-      
-      # Track for loop control
-      assign("loop_control_break", "null", envir = scrubwren::get_scrubwren_state())
-      
-      while (TRUE) {
-        
-        # "user break" means the body has not been evaluated, 
-        # if this is the final state, it means the user `break` from the loop body.
-        # "no break" means the body has been evaluated,
-        # if this is the final state, it means the user may or may not call `next` but no `break`.
-        if (scrubwren::get_scrubwren_state()$loop_control_break == "null") {
-          assign("loop_control_break", "user break", envir = scrubwren::get_scrubwren_state())
-        } else {
-          assign("loop_control_break", "no break", envir = scrubwren::get_scrubwren_state())
-          break 
-        }
-        
-        .(substitute(body))
-      }
-    }) 
-
-    eval(body_expr, envir = env)
-    
-    if (.scrubwren_state$loop_control_break == "user break") break
+# Get next item and return if the loop should continue
+for_next_item <- function() {
+  
+  loop_number <- .scrubwren_state$loop_number
+  
+  .scrubwren_state$loop_item[[loop_number]] <- reticulate::iter_next(.scrubwren_state$loop_iter[[loop_number]], 
+                                                                     completed = quote(StopIteration))
+  
+  if (identical(.scrubwren_state$loop_item[[loop_number]], quote(StopIteration))) {
+    return(FALSE)
+  } else {
+    return(TRUE)
   }
 }
 
+# Unpack for loop variables
+for_unpack <- function(var_sym) {
+  loop_number <- .scrubwren_state$loop_number
+  py_tuple_unpack(substitute(var_sym), 
+                  .scrubwren_state$loop_item[[loop_number]], 
+                  envir = .scrubwren_state$loop_env[[loop_number]],
+                  quote_vars = FALSE)
+}
 
 
 # py_comprehension --------------------------------------------------------
@@ -348,6 +386,7 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   
   # Setup comprehension container
   comprehension_init(format)
+  
   .scrubwren_state$comprehension_add <- comprehension_add
   
   # The final expression is a nested `py_for()` loop
@@ -377,11 +416,13 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
     }))
   }
   
+  accumulated_body <- substitute(local(accumulated_body))
+  
   # Record the accumulated for debug purpose
   .scrubwren_state$comprehension_accumulated_body <- accumulated_body
   
   # Evaluate the nested for loop in a new environment to avoid unnecessary side-effect
-  eval(accumulated_body, envir = new.env(parent = env))
+  eval(accumulated_body, envir = env)
   
   # Finalize the result
   comprehension_finalize()
