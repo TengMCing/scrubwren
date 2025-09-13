@@ -197,6 +197,14 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
   if (is.null(.state$loop_env)) .state$loop_env <- list()
   .state$loop <- .state$loop + 1L
   
+  # Pop the stack on exit
+  on.exit({
+    .state$loop_iter[[.state$loop]] <- NULL
+    .state$loop_item[[.state$loop]] <- NULL
+    .state$loop_env[[.state$loop]] <- NULL
+    .state$loop <- .state$loop - 1L  
+  })
+  
   # Get the iterator
   iter <- eval(iter_sym, envir = env)
   
@@ -213,13 +221,6 @@ py_for <- function(loop_spec, body, env = parent.frame()) {
   .state$loop_env[[.state$loop]] <- env
   
   eval(body_expr, envir = env)
-  
-  # Pop the stack
-  .state$loop_iter[[.state$loop]] <- NULL
-  .state$loop_item[[.state$loop]] <- NULL
-  .state$loop_env[[.state$loop]] <- NULL
-  .state$loop <- .state$loop - 1L  
-  
   
   return(invisible(NULL))
 }
@@ -401,11 +402,11 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   eval_env <- new.env(parent = env)
   
   # Build a stack
-  if (is.null(.state$comp)) .state$comp <- 0L
-  .state$comp <- .state$comp + 1L
-  
   # Setup comprehension container
   comp_init(format, substitute(body), eval_env)
+  
+  # Pop the stack on exit
+  on.exit(comp_cleanup())
   
   .state$comp_add <- comp_add
   
@@ -445,13 +446,13 @@ py_comprehension <- function(loop_spec_list, body, env = parent.frame(), format 
   # Finalize the result
   result <- comp_finalize()
   
-  # Clean up the stack
-  .state$comp <- .state$comp - 1L
-  
   return(result)
 }
 
 comp_init <- function(format, body, eval_env) {
+  
+  if (is.null(.state$comp)) .state$comp <- 0L
+  .state$comp <- .state$comp + 1L
   
   number <- .state$comp
   if (number == 1) {
@@ -496,7 +497,6 @@ comp_init <- function(format, body, eval_env) {
 
 comp_add <- function() {
   
-  
   number <- .state$comp
   format <- .state$comp_format[[number]]
   
@@ -523,7 +523,7 @@ comp_add <- function() {
     }
     
     # Record the object
-    .state$comp_result[[.state$comp_result_len[[number]]]][[number]] <- x
+    .state$comp_result[[number]][[.state$comp_result_len[[number]]]] <- x
     
   } else if (format %in% c("py_list", "py_tuple")) {
     .state$comp_result[[number]]$append(x)
@@ -554,13 +554,16 @@ comp_finalize <- function() {
     }
   }
   
-  result <- .state$comp_result[[number]]
+  return(.state$comp_result[[number]])
+}
+
+comp_cleanup <- function() {
+  number <- .state$comp
   
   .state$comp_format[[number]] <- NULL
   .state$comp_result[[number]] <- NULL
   .state$comp_result_len[[number]] <- NULL
   .state$comp_result_capacity[[number]] <- NULL
   .state$comp_func[[number]] <- NULL
-  
-  return(result)
+  .state$comp <- .state$comp - 1L
 }
