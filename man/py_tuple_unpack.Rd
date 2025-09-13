@@ -2,9 +2,12 @@
 % Please edit documentation in R/py_tuple_unpack.R
 \name{py_tuple_unpack}
 \alias{py_tuple_unpack}
+\alias{\%<-\%}
 \title{Unpack a Python tuple (or sequence) into R variables}
 \usage{
 py_tuple_unpack(vars, value, envir = parent.frame(), quote_vars = TRUE)
+
+vars \%<-\% value
 }
 \arguments{
 \item{vars}{A symbol or a call like \code{c(a, b, c)} representing the
@@ -48,6 +51,12 @@ py_tuple_unpack(c(a, c(b, d)), list(1, list(2, 3)))
 a  # 1
 b  # 2
 d  # 3
+
+# With the `\%<-\%` operator
+c(a, c(b, d)) \%<-\% list(3, list(4, 5))
+a  # 3
+b  # 4
+d  # 5 
 
 # Works with Python tuples/lists
 tup <- reticulate::tuple(list(10, list(20, 30)))

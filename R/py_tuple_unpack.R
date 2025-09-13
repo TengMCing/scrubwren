@@ -37,6 +37,12 @@
 #' b  # 2
 #' d  # 3
 #'
+#' # With the `%<-%` operator
+#' c(a, c(b, d)) %<-% list(3, list(4, 5))
+#' a  # 3
+#' b  # 4
+#' d  # 5 
+#' 
 #' # Works with Python tuples/lists
 #' tup <- reticulate::tuple(list(10, list(20, 30)))
 #' py_tuple_unpack(c(x, c(y, z)), tup)
@@ -73,4 +79,16 @@ py_tuple_unpack <- function(vars, value, envir = parent.frame(), quote_vars = TR
       py_tuple_unpack(vars[[i]], value[[i - 1]], envir, FALSE)
     }
   }
+}
+
+
+# Unpack assignment -------------------------------------------------------
+
+#' @rdname py_tuple_unpack
+#' @export
+`%<-%` <- function(vars, value) {
+  py_tuple_unpack(substitute(vars), 
+                  value, 
+                  envir = parent.frame(),
+                  quote_vars = FALSE)
 }
