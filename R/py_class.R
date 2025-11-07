@@ -48,6 +48,12 @@ py_class <- function(classname, ..., inherit = NULL, convert = FALSE) {
                       if (convert) "TRUE" else "FALSE"),
               txt, fixed = TRUE)
   
+  if (!convert) {
+    txt <- gsub("do.call(f, append(args[1], lapply(args[-1], py_to_r)))",
+                "do.call(f, args)",
+                txt, fixed = TRUE)
+  }
+  
   body(new_pyclass) <- parse(text = txt)
   
   new_pyclass(classname = classname, 
