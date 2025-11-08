@@ -2,48 +2,62 @@
 % Please edit documentation in R/py_class.R
 \name{py_class}
 \alias{py_class}
-\title{Create a Python class}
+\title{Create a Python class (adapted from reticulate v1.44.0)}
 \usage{
 py_class(classname, ..., inherit = NULL, convert = FALSE)
 }
 \arguments{
-\item{classname}{Character. Name of the class.}
+\item{classname}{Character. Name of the class to define.}
 
-\item{...}{Functions, attributes, or other definitions for the class.}
+\item{...}{Functions, attributes, or other class definitions.}
 
-\item{inherit}{List. A list of Python class objects representing the
-parent classes.}
+\item{inherit}{A Python class object or list of Python class objects
+representing base classes. If omitted, the class will not inherit from
+any Python base classes.}
 
-\item{convert}{Boolean. Whether to automatically convert Python objects to R.}
+\item{convert}{Logical. Whether to automatically convert Python objects
+to R when calling methods on the class. Defaults to \code{FALSE} to allow
+low-level interop.}
 }
 \value{
-A Python class object.
+A Python class object, constructed using Python's \code{type()}.
 }
 \description{
-This function works like \code{\link[reticulate:PyClass]{reticulate::PyClass()}}, but the \code{defs} argument
-can now be provided as individual arguments (\code{...}) instead of a list.
+This function creates a Python class object, similarly to
+\code{\link[reticulate:PyClass]{reticulate::PyClass()}}, but with two key differences:
 }
 \details{
-The original \code{\link[reticulate:PyClass]{reticulate::PyClass()}} does not allow disabling the automatic
-conversion of Python objects to R. This function modifies its function body
-to enable that functionality.
+\enumerate{
+\item The class definitions (\code{defs}) can be supplied directly as named
+arguments via \code{...}, rather than as a list.
+\item The implementation is adapted from the internal class-construction
+mechanism used in \strong{reticulate v1.44.0}, with modifications that allow
+you to control whether Python objects are automatically converted to R
+(\code{convert = TRUE/FALSE}).
+}
+
+Each function supplied in \code{...} is wrapped to support Python's \code{super()}
+and to optionally disable automatic conversion of Python arguments,
+closely following the behaviour of reticulate’s internals.
 }
 \examples{
 
 \dontrun{
-Employee <- py_class("Employee",
-                     `__init__` = function(self, name, id) {
-                       self$name <- name
-                       self$id <- id
-                       return(invisible(NULL))
-                     },
-                     get_email = function(self) {
-                       paste0(self$name, "_", self$id, "@company.com")
-                     })
+Employee <- py_class(
+  "Employee",
+  `__init__` = function(self, name, id) {
+    self$name <- name
+    self$id <- id
+    invisible(NULL)
+  },
+  get_email = function(self) {
+    paste0(self$name, "_", self$id, "@company.com")
+  }
+)
+
 Mike <- Employee("Mike", "1234")
 Mike$get_email()
 Mike$get_email() |> class()
 }
-
 
 }
