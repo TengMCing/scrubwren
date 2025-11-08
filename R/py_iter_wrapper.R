@@ -7,6 +7,7 @@
 #' @param obj A Python iterable or iterator object. If it is
 #'   iterable but not an iterator, it will be converted to an iterator internally.
 #' @param func An R or Python function to apply to each element of the iterable.
+#' @param convert Boolean. Whether to automatically convert each value to R object.
 #'
 #' @return A Python iterator object whose elements are transformed by `func`. Each
 #'   call to `next()` returns `func(element)`.
@@ -21,31 +22,30 @@
 #' @examples
 #' \dontrun{
 #' my_list <- py_builtins$list(1:5)
-#' wrapped_iter <- py_iter_wrapper(my_list, function(x) x^2)
+#' wrapped_iter <- py_iterable_wrapper(my_list, function(x) x^2) |>
+#'   reticulate::as_iterator()
 #' reticulate::iter_next(wrapped_iter)  # Returns 1
 #' reticulate::iter_next(wrapped_iter)  # Returns 4
 #' }
 #'
 #' @export
-py_iter_wrapper <- function(obj, func) {
-  if (py_is_iterable(obj) && !py_is_iterator(obj)) {
-    obj_iter <- reticulate::as_iterator(obj)
-  }
+py_iterable_wrapper <- function(obj, func, convert = FALSE) {
+  if (!py_is_iterable(obj)) cli::cli_abort("Arugument `obj` is not iterable!")
   
   IterWrapper <- reticulate::py_run_string("
 class IterWrapper: 
-    def __init__(self, obj_iter, func): 
-        self.obj_iter = obj_iter 
+    def __init__(self, obj, func): 
+        self.obj = obj
         self.func = func 
       
     def __len__(self): 
-        return len(self.obj_iter) 
+        return len(self.obj) 
       
     def __iter__(self): 
-        for x in self.obj_iter: 
+        for x in self.obj: 
             yield (self.func(x))",
-                      convert = FALSE,
+                      convert = convert,
                       local = TRUE)$IterWrapper
   
-  return(reticulate::as_iterator(IterWrapper(obj_iter, func)))                         
+  return(IterWrapper(obj, func))                         
 }
